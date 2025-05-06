@@ -1,19 +1,14 @@
-// src/middlewares/auth.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-// Extende a interface Request para incluir o usuário decodificado
 declare global {
   namespace Express {
     interface Request {
-      user?: string | JwtPayload;
+      user?: JwtPayload & { id: string; role: string };
     }
   }
 }
 
-/**
- * Middleware para verificar token JWT e autorizar acesso
- */
 const authenticateToken = (req: Request, res: Response, next: NextFunction): Response | void => {
   const authHeader = req.header('Authorization');
   const token = authHeader?.split(' ')[1];
@@ -24,7 +19,7 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction): Res
 
   try {
     const secret = process.env.JWT_SECRET as string;
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret) as JwtPayload & { id: string; role: string };
     req.user = decoded;
     next();
   } catch (err) {
