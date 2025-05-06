@@ -1,12 +1,21 @@
-// // Esse middleware é responsável por verificar se o usuário tem o papel(role) necessário para acessar uma rota em questão, por exemplo admin...
+import { Request, Response, NextFunction } from 'express';
 
-// const authorizeRole = (roles) => {
-//     return (req, res, next) => {
-//         if (!roles.includes(req.user.role)) { // Verifica se o papel do usuário está na lista de papéis permitidos ( !role == indefinido )
-//             return res.status(403).json({ message: 'Acesso negado. Você não tem permissão para esta ação.' });
-//         }
-//         next(); // Passa para o próximo middleware ou rota
-//     };
-// };
+const authorizeRole = (roles: string[]) => {
+  return (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void | Response => {
+    const user = req.user as { id: string; role: string };
 
-// export default authorizeRole;
+    if (!user?.role || !roles.includes(user.role)) {
+      return res.status(403).json({
+        message: 'Acesso negado. Você não tem permissão para esta ação.'
+      });
+    }
+
+    next();
+  };
+};
+
+export default authorizeRole;
