@@ -1,16 +1,20 @@
-// // Esse middleware é responsável por registrar as requisições feitas ao servidor, incluindo o método HTTP, a URL e o tempo de resposta. 
-// // Isso pode ser útil para fins de auditoria e monitoramento de desempenho.
+// src/middlewares/logger.ts
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
-// const logger = (req, res, next) => {
-//     const start = Date.now(); // Criamos a constante que armazena a data atual...
-//     console.log(`${req.method} ${req.url} - Iniciando`); // Renderizo no console o método e a URL da requisição...
+/**
+ * Middleware responsável por registrar cada requisição ao servidor,
+ * incluindo método, URL e tempo de resposta, para auditoria e monitoramento.
+ */
+const logger: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  console.log(`${req.method} ${req.url} – Iniciando`);
 
-//     res.on('finish', () => { // Esse evento é acionado quando a resposta é finalizada
-//         const duration = Date.now() - start; // Calculamos a duração da requisição
-//         console.log(`${req.method} ${req.url} - Concluído em ${duration}ms`); 
-//     });
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.url} – Concluído em ${duration}ms`);
+  });
 
-//     next();  // Passa para o próximo middleware ou rota
-// };
+  next();
+};
 
-// export default logger;
+export default logger;
