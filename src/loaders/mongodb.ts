@@ -1,16 +1,22 @@
-// import dotenv from "dotenv";
-// import mongoose from "mongoose";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-// dotenv.config();
+dotenv.config();
 
-// async function startDB() {
-//   try {
-//     console.log("Tentando conectar ao MongoDB...");
-//     await mongoose.connect(process.env.MONGODB_URI);
-//     console.log("Conectado ao MongoDB!");
-//   } catch (err) {
-//     console.error("Erro de conexão com o MongoDB:", err);
-//   }
-// }
+async function startDB(): Promise<void> {
+  try {
+    console.log("Tentando conectar ao MongoDB...");
 
-// export default startDB;
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI não está definida no arquivo .env");
+    }
+
+    await mongoose.connect(mongoUri);
+    console.log("Conectado ao MongoDB!");
+  } catch (err) {
+    console.error("Erro de conexão com o MongoDB:", err);
+  }
+}
+
+export default startDB;
