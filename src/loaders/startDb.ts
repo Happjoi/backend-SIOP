@@ -1,10 +1,10 @@
-// import startDB from "./mongodb.js"; // Agora com a extensão correta
+import startDB from "./mongodb";
 
-// class Loaders {
-//   async start() {
-//     console.log("Iniciando Loaders...");
-//     await startDB();
-//   }
-// }
+class Loaders {
+  async start(): Promise<void> {
+    console.log("Iniciando Loaders...");
+    await startDB();
+  }
+}
 
-// export default new Loaders();
+export default new Loaders();
