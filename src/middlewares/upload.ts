@@ -1,20 +1,11 @@
-// src/middlewares/logger.ts
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+// src/middlewares/upload.ts
+import multer, { StorageEngine, Multer } from 'multer';
 
 /**
- * Middleware responsável por registrar cada requisição ao servidor,
- * incluindo método, URL e tempo de resposta, para auditoria e monitoramento.
+ * Configuração do Multer para armazenar arquivos em memória (buffer),
+ * sem salvar em disco, ideal para upload direto ao Cloudinary.
  */
-const logger: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  console.log(`${req.method} ${req.url} – Iniciando`);
+const storage: StorageEngine = multer.memoryStorage();
+const upload: Multer = multer({ storage });
 
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.url} – Concluído em ${duration}ms`);
-  });
-
-  next();
-};
-
-export default logger;
+export default upload;
