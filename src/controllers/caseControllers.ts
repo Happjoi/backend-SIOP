@@ -1,127 +1,225 @@
-// import Case from '../models/Case.js';
-// import axios from 'axios';
+import { Request, Response } from "express";
+import axios, { AxiosResponse } from "axios";
+import Case, { ICase } from "../models/Case";
 
-// export const createCase = async (req, res) => {
-//   try {
-//     console.log(req.body);
-//     const { titulo, descricao, status, dataAbertura, dataFechamento, localizacao } = req.body;
-//     const newCase = new Case({ titulo, descricao, status, dataAbertura, dataFechamento, localizacao });
-//     await newCase.save();
-//     res.status(201).json(newCase);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao criar o caso', error });
-//   }
-// };
+// Interface para os dados esperados no corpo da requisição de criação de caso
+interface CreateCaseBody {
+  titulo: string;
+  descricao: string;
+  status: string;
+  dataAbertura: Date | string;
+  dataFechamento?: Date | string;
+  localizacao: string;
+}
 
-// export const getAllCases = async (req, res) => {
-//   try {
-//     const cases = await Case.find();
-//     res.status(200).json(cases);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao obter casos', error });
-//   }
-// };
+// Interface para os dados esperados no corpo da requisição de atualização parcial
+interface UpdateCaseBody {
+  [key: string]: any; // Permite qualquer campo para atualização parcial
+}
 
-// export const getCaseById = async (req, res) => {
-//   try {
-//     const caso = await Case.findById(req.params.id);
-//     if (!caso) {
-//       return res.status(404).json({ message: 'Caso não encontrado' });
-//     }
-//     res.status(200).json(caso);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao obter caso', error });
-//   }
-// };
+// Interface para a resposta da API Nominatim
+interface NominatimResponse {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
 
-// export const updateCase = async (req, res) => {
-//   try {
-//     const caso = await Case.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//     if (!caso) {
-//       return res.status(404).json({ message: 'Caso não encontrado' });
-//     }
-//     res.status(200).json(caso);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao atualizar caso', error });
-//   }
-// };
+export const createCase = async (
+  req: Request<{}, {}, CreateCaseBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    console.log(req.body);
+    const {
+      titulo,
+      descricao,
+      status,
+      dataAbertura,
+      dataFechamento,
+      localizacao,
+    } = req.body;
+    const newCase = new Case({
+      titulo,
+      descricao,
+      status,
+      dataAbertura,
+      dataFechamento,
+      localizacao,
+    });
+    await newCase.save();
+    res.status(201).json(newCase);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao criar o caso", error: error.message });
+  }
+};
 
-// export const patchCase = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updateData = req.body;
+export const getAllCases = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const cases: ICase[] = await Case.find();
+    res.status(200).json(cases);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao obter casos", error: error.message });
+  }
+};
 
-//     const updatedCase = await Case.findByIdAndUpdate(id, updateData, {
-//       new: true,
-//       runValidators: true,
-//     });
+export const getCaseById = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const caso: ICase | null = await Case.findById(req.params.id);
+    if (!caso) {
+      res.status(404).json({ message: "Caso não encontrado" });
+      return;
+    }
+    res.status(200).json(caso);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao obter caso", error: error.message });
+  }
+};
 
-//     if (!updatedCase) {
-//       return res.status(404).json({ message: 'Caso não encontrado' });
-//     }
+export const updateCase = async (
+  req: Request<{ id: string }, {}, UpdateCaseBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const caso: ICase | null = await Case.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!caso) {
+      res.status(404).json({ message: "Caso não encontrado" });
+      return;
+    }
+    res.status(200).json(caso);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao atualizar caso", error: error.message });
+  }
+};
 
-//     res.status(200).json(updatedCase);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao atualizar o caso', error: error.message });
-//   }
-// };
+export const patchCase = async (
+  req: Request<{ id: string }, {}, UpdateCaseBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
 
-// export const deleteCase = async (req, res) => {
-//   try {
-//     const caso = await Case.findByIdAndDelete(req.params.id);
-//     if (!caso) {
-//       return res.status(404).json({ message: 'Caso não encontrado' });
-//     }
-//     res.status(200).json({ message: 'Caso deletado com sucesso' });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao deletar caso', error });
-//   }
-// };
+    const updatedCase: ICase | null = await Case.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
-// export const geocodeAddress = async (req, res) => {
-//   const caseId = req.params.id; // Recebe o ID da URL
+    if (!updatedCase) {
+      res.status(404).json({ message: "Caso não encontrado" });
+      return;
+    }
 
-//   try {
-//     // Busca o caso pelo ID
-//     const caso = await Case.findById(caseId);
+    res.status(200).json(updatedCase);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao atualizar o caso", error: error.message });
+  }
+};
 
-//     if (!caso) {
-//       return res.status(404).json({ message: 'Caso não encontrado.' });
-//     }
+export const deleteCase = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const caso: ICase | null = await Case.findByIdAndDelete(req.params.id);
+    if (!caso) {
+      res.status(404).json({ message: "Caso não encontrado" });
+      return;
+    }
+    res.status(200).json({ message: "Caso deletado com sucesso" });
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao deletar caso", error: error.message });
+  }
+};
 
-//     const endereco = caso.localizacao;
+export const geocodeAddress = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  const caseId = req.params.id; // Recebe o ID da URL
 
-//     console.log('Endereço do caso:', endereco);
+  try {
+    // Busca o caso pelo ID
+    const caso: ICase | null = await Case.findById(caseId);
 
-//     // Requisição para o Nominatim
-//     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-//       params: {
-//         q: endereco,
-//         format: 'json',
-//         addressdetails: 1,
-//         limit: 1,
-//       },
-//       headers: {
-//         'User-Agent': 'siop/1.0 (felipe1ricardo158@gmail.com)' // Cabeçalho correto
-//       }
-//     });
+    if (!caso) {
+      res.status(404).json({ message: "Caso não encontrado." });
+      return;
+    }
 
-//     if (response.data.length > 0) {
-//       const { lat, lon, display_name } = response.data[0];
-//       res.status(200).json({
-//         latitude: lat,
-//         longitude: lon,
-//         endereco: display_name
-//       });
-//     } else {
-//       res.status(404).json({ message: 'Endereço não encontrado no Nominatim.' });
-//     }
+    const endereco = caso.localizacao;
 
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Erro ao consultar o Nominatim ou buscar o caso.' });
-//   }
-// };
+    console.log("Endereço do caso:", endereco);
 
+    // Requisição para o Nominatim
+    const response: AxiosResponse<NominatimResponse[]> = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          q: endereco,
+          format: "json",
+          addressdetails: 1,
+          limit: 1,
+        },
+        headers: {
+          "User-Agent": "siop/1.0 (felipe1ricardo158@gmail.com)", // Cabeçalho correto
+        },
+      }
+    );
 
-// export default { createCase, getAllCases, getCaseById, updateCase, patchCase, deleteCase, geocodeAddress };
+    if (response.data.length > 0) {
+      const { lat, lon, display_name } = response.data[0];
+      res.status(200).json({
+        latitude: lat,
+        longitude: lon,
+        endereco: display_name,
+      });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Endereço não encontrado no Nominatim." });
+    }
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({
+      message: "Erro ao consultar o Nominatim ou buscar o caso.",
+      error: error.message,
+    });
+  }
+};
+
+// Exportação como objeto para compatibilidade com a importação padrão
+export default {
+  createCase,
+  getAllCases,
+  getCaseById,
+  updateCase,
+  patchCase,
+  deleteCase,
+  geocodeAddress,
+};

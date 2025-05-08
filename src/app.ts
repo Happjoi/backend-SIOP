@@ -1,23 +1,28 @@
-// import express from 'express';
-// import dotenv from 'dotenv';
-// import cors from 'cors';
-// import authRoutes from './src/routes/authRoutes.js';
-// import userRoutes from './src/routes/userRoutes.js';
-// import evidenceRoutes from './src/routes/evidenceRoutes.js';
-// import reportRoutes from './src/routes/reportRoutes.js';
-// import caseRoutes from './src/routes/caseRoutes.js';
+// app.ts
+import express, { Application } from "express";
+import dotenv from "dotenv";
+import cors from "cors";
 
+import authRoutes from "./routes/authRoutes";
+import userRoutes from "./routes/userRoutes";
+import evidenceRoutes from "./routes/evidenceRoutes";
+import reportRoutes from "./routes/reportRoutes";
+import caseRoutes from "./routes/caseRoutes";
+import router from "./routes/authRoutes";
+// import imageEvidenceRoutes from './src/routes/imageEvidenceRoutes';
 
-// const app = express();
+dotenv.config();
 
-// app.use(express.json());
-// app.use(cors());
+const app: Application = express();
 
-// app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
-// app.use('/api/evidences', evidenceRoutes);
-// app.use('/api/reports', reportRoutes);
-// app.use('/api/cases', caseRoutes);
-// // app.use('/api/upload', imageEvidenceRoutes);
+app.use(express.json());
+app.use(cors());
 
-// export default app;
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/evidences", evidenceRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/cases", caseRoutes);
+// app.use('/api/upload', imageEvidenceRoutes);
+
+export default app;

@@ -1,17 +1,19 @@
-// import express from 'express';
-// import { Router } from 'express';
-// import authController from '../controllers/authControllers.js';
+import express, { Router } from "express";
+import * as authController from "../controllers/authControllers";
 
-// const router = Router();
+// Tipagem explícita para o roteador
+const router: Router = express.Router();
 
-// // Login do usuário
-// router.post('/login', authController.login);
+// Login do usuário
+router.post("/login", authController.login);
 
-// // Logout do usuário
-// router.post('/logout', authController.logout);
+// Logout do usuário
+router.post("/logout", authController.logout);
 
-// router.post('/forgot-password', authController.forgotPassword);
+// Solicitação de esquecimento de senha
+router.post("/forgot-password", authController.forgotPassword);
 
-// router.post('/reset-password',  authController.resetPassword);
+// Redefinição de senha
+router.post("/reset-password", authController.resetPassword);
 
-// export default router;
+export default router;
