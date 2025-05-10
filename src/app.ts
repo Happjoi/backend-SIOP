@@ -1,5 +1,5 @@
 // app.ts
-import express, { Application } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 
@@ -12,10 +12,12 @@ import router from "./routes/authRoutes";
 // import imageEvidenceRoutes from './src/routes/imageEvidenceRoutes';
 
 dotenv.config();
-
-const app: Application = express();
+const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 app.use(cors());
 
 app.use("/api/auth", authRoutes);

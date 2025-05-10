@@ -25,7 +25,7 @@ export const createUser = async (
     // Gera um salt e criptografa a senha antes de salvar
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(senha, salt);
-
+    
     const newUser = new User({
       nome,
       email,
@@ -36,6 +36,7 @@ export const createUser = async (
     await newUser.save();
     res.status(201).json(newUser);
   } catch (error: any) {
+    console.error("⛔ Erro ao criar usuário:", error);
     res
       .status(500)
       .json({ message: "Erro ao criar usuário", error: error.message });

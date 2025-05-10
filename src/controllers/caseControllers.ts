@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from 'mongoose';
 import axios, { AxiosResponse } from "axios";
 import Case, { ICase } from "../models/Case";
 
@@ -6,10 +7,17 @@ import Case, { ICase } from "../models/Case";
 interface CreateCaseBody {
   titulo: string;
   descricao: string;
-  status: string;
-  dataAbertura: Date | string;
-  dataFechamento?: Date | string;
+  status: 'Aberto' | 'Em Análise' | 'Fechado'; // Use o enum do schema
   localizacao: string;
+  dataAbertura?: Date | string; // Opcional (tem default no schema)
+  dataFechamento?: Date | string;
+  responsavel: string; // ID do usuário (será convertido para ObjectId)
+  sexoVitima: 'Masculino' | 'Feminino' | 'Outro';
+  corPele: string;
+  causaMorte: string;
+  instituicao: string;
+  evidencias?: string[]; // IDs das evidências (opcional)
+  relatorios?: string[]; // IDs dos relatórios (opcional)
 }
 
 // Interface para os dados esperados no corpo da requisição de atualização parcial
@@ -34,18 +42,54 @@ export const createCase = async (
       titulo,
       descricao,
       status,
+      localizacao,
+      responsavel,
+      sexoVitima,
+      corPele,
+      causaMorte,
+      instituicao,
+      evidencias = [],
+      relatorios = [],
       dataAbertura,
       dataFechamento,
-      localizacao,
     } = req.body;
+
+       // Validação dos campos obrigatórios
+       if (
+        !titulo ||
+        !descricao ||
+        !status ||
+        !localizacao ||
+        !responsavel ||
+        !sexoVitima ||
+        !corPele ||
+        !causaMorte ||
+        !instituicao
+      ) {
+        res.status(400).json({ message: "Campos obrigatórios faltando" });
+        return;
+      }
+          // Converte strings para ObjectIds
+    const evidenciasIds = evidencias.map(id => new mongoose.Types.ObjectId(id));
+    const relatoriosIds = relatorios.map(id => new mongoose.Types.ObjectId(id));
+    const responsavelId = new mongoose.Types.ObjectId(responsavel);
+
     const newCase = new Case({
       titulo,
       descricao,
       status,
-      dataAbertura,
-      dataFechamento,
       localizacao,
+      responsavel: responsavelId,
+      sexoVitima,
+      corPele,
+      causaMorte,
+      instituicao,
+      evidencias: evidenciasIds,
+      relatorios: relatoriosIds,
+      dataAbertura: dataAbertura ? new Date(dataAbertura) : undefined,
+      dataFechamento: dataFechamento ? new Date(dataFechamento) : undefined,
     });
+    
     await newCase.save();
     res.status(201).json(newCase);
   } catch (error: any) {

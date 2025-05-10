@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import formatDatePlugin from '../utils/formatDatePlugin.js';
+import formatDatePlugin from '../utils/formatDatePlugin';
 
 export interface ICase extends Document {
   titulo: string;
