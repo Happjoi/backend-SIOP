@@ -1,18 +1,11 @@
-// src/types/express/index.d.ts
-import type { JwtPayload } from 'jsonwebtoken';
+import { Request } from 'express';
+import { JwtPayload } from 'jsonwebtoken';
 
 declare global {
   namespace Express {
     interface Request {
-      /**
-       * Preenchido pelo middleware de autenticação.
-       * Tipamos como payload decodificado do JWT, que estende JwtPayload,
-       * garantindo que você tenha acesso a `id` e `role`.
-       */
       user?: JwtPayload & { id: string; role: string };
+      file?: Express.Multer.File;
     }
   }
 }
-
-// Faz com que o TS trate este arquivo como módulo
-export {};

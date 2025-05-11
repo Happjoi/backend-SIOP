@@ -2,6 +2,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import 'dotenv/config';
 
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -13,6 +14,7 @@ import router from "./routes/authRoutes";
 
 dotenv.config();
 const app = express();
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
