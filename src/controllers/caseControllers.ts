@@ -10,10 +10,7 @@ interface CreateCaseBody {
   status: 'Aberto' | 'Em Análise' | 'Fechado'; // Use o enum do schema
   localizacao: string;
   dataAbertura?: Date | string; // Opcional (tem default no schema)
-  dataFechamento?: Date | string;
   responsavel: string; // ID do usuário (será convertido para ObjectId)
-  sexoVitima: 'Masculino' | 'Feminino' | 'Outro';
-  corPele: string;
   causaMorte: string;
   instituicao: string;
   evidencias?: string[]; // IDs das evidências (opcional)
@@ -44,14 +41,11 @@ export const createCase = async (
       status,
       localizacao,
       responsavel,
-      sexoVitima,
-      corPele,
       causaMorte,
       instituicao,
       evidencias = [],
       relatorios = [],
       dataAbertura,
-      dataFechamento,
     } = req.body;
 
        // Validação dos campos obrigatórios
@@ -61,8 +55,6 @@ export const createCase = async (
         !status ||
         !localizacao ||
         !responsavel ||
-        !sexoVitima ||
-        !corPele ||
         !causaMorte ||
         !instituicao
       ) {
@@ -80,14 +72,11 @@ export const createCase = async (
       status,
       localizacao,
       responsavel: responsavelId,
-      sexoVitima,
-      corPele,
       causaMorte,
       instituicao,
       evidencias: evidenciasIds,
       relatorios: relatoriosIds,
       dataAbertura: dataAbertura ? new Date(dataAbertura) : undefined,
-      dataFechamento: dataFechamento ? new Date(dataFechamento) : undefined,
     });
     
     await newCase.save();
