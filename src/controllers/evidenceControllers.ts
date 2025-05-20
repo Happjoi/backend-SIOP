@@ -1,11 +1,23 @@
 // src/controllers/evidenceControllers.ts
-import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
-import EvidenceModel, { IEvidence } from '../models/Evidence';
-import UserModel,     { IUser     } from '../models/User';
-import CaseModel,     { ICase     } from '../models/Case';
-import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
-import streamifier from 'streamifier';
+import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
+import EvidenceModel, { IEvidence } from "../models/Evidence";
+import UserModel, { IUser } from "../models/User";
+import CaseModel, { ICase } from "../models/Case";
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiErrorResponse,
+} from "cloudinary";
+import streamifier from "streamifier";
+import "dotenv/config"; // Garanta que dotenv esteja configurado (redundante se estiver no app.ts)
+
+// Configure o Cloudinary usando as variáveis de ambiente
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 /**
  * Extendemos Request para permitir file opcional do multer.
@@ -25,35 +37,10 @@ export const uploadImage = async (
 ): Promise<void> => {
   try {
     // 1) Campos obrigatórios do corpo
-    const { tipo, coletadoPor, vitima, categoria, origem, condicao, status, localizacao, observacoesTecnicas, descricaoDetalhada } = req.body;
-    if (!req.file) {
-      res.status(400).json({ message: 'Arquivo não enviado.' });
-      return;
-    }
-    // 2) Conversão de IDs
-    const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
-    const objIdVitima   = new mongoose.Types.ObjectId(vitima);
-
-    // 3) Upload ao Cloudinary
-    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: 'dontforensic' },
-        (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
-          if (err) return reject(err);
-          resolve(result!);
-        }
-      );
-      streamifier.createReadStream(req.file!.buffer).pipe(stream);
-    });
-
-    // 4) Criação do documento
-    const newEv = await EvidenceModel.create({
+    const {
       tipo,
-      dataColeta:        new Date(),
-      coletadoPor:       objIdColetado,
-      imagemURL:         uploadResult.secure_url,
-      publicId:          uploadResult.public_id,
-      vitima:            objIdVitima,
+      coletadoPor,
+      vitima,
       categoria,
       origem,
       condicao,
@@ -61,7 +48,48 @@ export const uploadImage = async (
       localizacao,
       observacoesTecnicas,
       descricaoDetalhada,
-      relatorios:        []
+    } = req.body;
+    if (!req.file) {
+      res.status(400).json({ message: "Arquivo não enviado." });
+      return;
+    }
+    // 2) Conversão de IDs
+    const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
+    const objIdVitima = new mongoose.Types.ObjectId(vitima);
+
+    // 3) Upload ao Cloudinary
+    const uploadResult = await new Promise<UploadApiResponse>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "dontforensic" },
+          (
+            err: UploadApiErrorResponse | undefined,
+            result: UploadApiResponse | undefined
+          ) => {
+            if (err) return reject(err);
+            resolve(result!);
+          }
+        );
+        streamifier.createReadStream(req.file!.buffer).pipe(stream);
+      }
+    );
+
+    // 4) Criação do documento
+    const newEv = await EvidenceModel.create({
+      tipo,
+      dataColeta: new Date(),
+      coletadoPor: objIdColetado,
+      imagemURL: uploadResult.secure_url,
+      publicId: uploadResult.public_id,
+      vitima: objIdVitima,
+      categoria,
+      origem,
+      condicao,
+      status,
+      localizacao,
+      observacoesTecnicas,
+      descricaoDetalhada,
+      relatorios: [],
     } as Partial<IEvidence>);
 
     res.status(201).json(newEv);
@@ -82,12 +110,14 @@ export const deleteImage = async (
   try {
     const ev = await EvidenceModel.findById(req.params.id);
     if (!ev || !ev.publicId) {
-      res.status(404).json({ message: 'Evidência ou publicId não encontrado.' });
+      res
+        .status(404)
+        .json({ message: "Evidência ou publicId não encontrado." });
       return;
     }
     await cloudinary.uploader.destroy(ev.publicId);
     await EvidenceModel.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: 'Imagem deletada com sucesso.' });
+    res.status(200).json({ message: "Imagem deletada com sucesso." });
   } catch (err) {
     next(err);
   }
@@ -98,24 +128,40 @@ export const deleteImage = async (
  * Cria uma evidência textual (sem imagem).
  */
 export const createEvidence = async (
-  req: Request<{}, {}, Partial<IEvidence> & { coletadoPor: string; vitima: string }>,
+  req: Request<
+    {},
+    {},
+    Partial<IEvidence> & { coletadoPor: string; vitima: string }
+  >,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { tipo, coletadoPor, vitima, categoria, origem, condicao, status, localizacao, conteudo, observacoesTecnicas, descricaoDetalhada } = req.body as any;
+    const {
+      tipo,
+      coletadoPor,
+      vitima,
+      categoria,
+      origem,
+      condicao,
+      status,
+      localizacao,
+      conteudo,
+      observacoesTecnicas,
+      descricaoDetalhada,
+    } = req.body as any;
 
     // Conversão de IDs
     const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
-    const objIdVitima   = new mongoose.Types.ObjectId(vitima);
+    const objIdVitima = new mongoose.Types.ObjectId(vitima);
 
     // Cria documento
     const newEv = await EvidenceModel.create({
       tipo,
-      dataColeta:       new Date(),
-      coletadoPor:      objIdColetado,
+      dataColeta: new Date(),
+      coletadoPor: objIdColetado,
       conteudo,
-      vitima:           objIdVitima,
+      vitima: objIdVitima,
       categoria,
       origem,
       condicao,
@@ -123,7 +169,7 @@ export const createEvidence = async (
       localizacao,
       observacoesTecnicas,
       descricaoDetalhada,
-      relatorios:       []
+      relatorios: [],
     } as Partial<IEvidence>);
 
     res.status(201).json(newEv);
@@ -144,7 +190,7 @@ export const getAllEvidences = async (
   try {
     const list = await EvidenceModel.find();
     if (!list.length) {
-      res.status(404).json({ message: 'Nenhuma evidência encontrada.' });
+      res.status(404).json({ message: "Nenhuma evidência encontrada." });
       return;
     }
     res.status(200).json(list);
@@ -165,7 +211,7 @@ export const getEvidenceById = async (
   try {
     const ev = await EvidenceModel.findById(req.params.id);
     if (!ev) {
-      res.status(404).json({ message: 'Evidência não encontrada.' });
+      res.status(404).json({ message: "Evidência não encontrada." });
       return;
     }
     res.status(200).json(ev);
@@ -184,13 +230,12 @@ export const updateEvidence = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const ev = await EvidenceModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const ev = await EvidenceModel.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!ev) {
-      res.status(404).json({ message: 'Evidência não encontrada.' });
+      res.status(404).json({ message: "Evidência não encontrada." });
       return;
     }
     res.status(200).json(ev);
@@ -209,13 +254,12 @@ export const patchEvidence = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const ev = await EvidenceModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const ev = await EvidenceModel.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!ev) {
-      res.status(404).json({ message: 'Evidência não encontrada.' });
+      res.status(404).json({ message: "Evidência não encontrada." });
       return;
     }
     res.status(200).json(ev);
@@ -236,10 +280,10 @@ export const deleteEvidence = async (
   try {
     const ev = await EvidenceModel.findByIdAndDelete(req.params.id);
     if (!ev) {
-      res.status(404).json({ message: 'Evidência não encontrada.' });
+      res.status(404).json({ message: "Evidência não encontrada." });
       return;
     }
-    res.status(200).json({ message: 'Evidência deletada com sucesso.' });
+    res.status(200).json({ message: "Evidência deletada com sucesso." });
   } catch (err) {
     next(err);
   }
@@ -253,5 +297,5 @@ export default {
   getEvidenceById,
   updateEvidence,
   patchEvidence,
-  deleteEvidence
+  deleteEvidence,
 };
