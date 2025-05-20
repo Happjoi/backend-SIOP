@@ -93,7 +93,7 @@ export const getAllCases = async (
   res: Response
 ): Promise<void> => {
   try {
-    const cases: ICase[] = await Case.find();
+    const cases: ICase[] = await Case.find().populate('responsavel', 'nome'); // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
     res.status(200).json(cases);
   } catch (error: any) {
     res
