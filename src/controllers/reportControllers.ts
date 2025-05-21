@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import Report, { IReport } from "../models/Report";
+import mongoose from "mongoose";
+import CaseModel from "../models/Case";
 
 // Interface para os dados esperados no corpo da requisição de criação de relatório
 interface CreateReportBody {
@@ -16,30 +18,38 @@ interface UpdateReportBody {
 }
 
 export const createReport = async (
-  req: Request<{}, {}, CreateReportBody>,
+  req: Request<{ caseId: string }, {}, IReport>,
   res: Response
 ): Promise<void> => {
   try {
-    const {
-      titulo,
-      conteudo,
-      peritoResponsavel,
-      dataCriacao,
-      casoRelacionado,
-    } = req.body;
+    const { caseId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      res.status(400).json({ message: "ID do caso inválido." });
+      return;
+    }
+
+    const { titulo, conteudo, peritoResponsavel, dataCriacao } = req.body;
+    
     const newReport = new Report({
       titulo,
       conteudo,
       peritoResponsavel,
-      dataCriacao,
-      casoRelacionado,
+      dataCriacao: dataCriacao ? new Date(dataCriacao) : new Date(),
+      casoRelacionado: new mongoose.Types.ObjectId(caseId)
     });
+
     await newReport.save();
+
+    await CaseModel.findByIdAndUpdate(caseId, {
+      $push: { relatorios: newReport._id }
+    });
+
     res.status(201).json(newReport);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: "Erro ao criar relatório", error: error.message });
+    res.status(500).json({
+      message: "Erro ao criar relatório",
+      error: error.message
+    });
   }
 };
 
