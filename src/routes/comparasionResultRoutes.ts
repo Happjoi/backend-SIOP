@@ -1,25 +1,25 @@
-// import express from 'express';
-// import comparisonResultController from '../controllers/comparasionResultControllers.js';
-// import { Router } from 'express';
+import express, { Router } from "express";
+import comparisonResultController from "../controllers/comparasionResultControllers";
 
-// const router = Router();
+// Tipagem explícita para o roteador
+const router: Router = express.Router();
 
-// // Criar um novo resultado de comparação
-// router.post('/', comparisonResultController.createComparisonResult);
+// Criar um novo resultado de comparação
+router.post("/", comparisonResultController.createComparisonResult);
 
-// // Obter todos os resultados de comparação
-// router.get('/', comparisonResultController.getAllComparisonResults);
+// Obter todos os resultados de comparação
+router.get("/", comparisonResultController.getAllComparisonResults);
 
-// // Obter resultado de comparação por ID
-// router.get('/:id', comparisonResultController.getComparisonResultById);
+// Obter resultado de comparação por ID
+router.get("/:id", comparisonResultController.getComparisonResultById);
 
-// // Atualizar um resultado de comparação
-// router.put('/:id', comparisonResultController.updateComparisonResult);
+// Atualizar um resultado de comparação
+router.put("/:id", comparisonResultController.updateComparisonResult);
 
-// // Atualizar recurso especifico do resultado da comparação
-// router.patch('/:id', comparisonResultController.patchComparisonResult);
+// Atualizar recurso específico do resultado da comparação
+router.patch("/:id", comparisonResultController.patchComparisonResult);
 
-// // Deletar um resultado de comparação
-// router.delete('/:id', comparisonResultController.deleteComparisonResult);
+// Deletar um resultado de comparação
+router.delete("/:id", comparisonResultController.deleteComparisonResult);
 
-// export default router;
+export default router;

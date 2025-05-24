@@ -1,17 +1,28 @@
-// // Esse middleware é responsável por validar os dados de entrada de uma requisição, garantindo que eles estejam no formato correto e atendam aos requisitos definidos. 
-// // Isso ajuda a evitar erros e inconsistências nos dados que são processados pelo servidor.
-// // Acredito que não seja tão útil agora de começo mas fica aqui caso seja necessário no futuro.
-// import { celebrate, Joi, Segments } from 'celebrate';
+import { CelebrateError, Segments } from 'celebrate';
+import { Request, Response, NextFunction } from 'express';
+import { ValidationErrorItem } from 'joi';
 
-// const validateCreateComparisonResult = celebrate({ 
-//     [Segments.BODY]: Joi.object().keys({
-//         resultado: Joi.string().required(),
-//         precisao: Joi.number().required(),
-//         analisadoPor: Joi.string().required(),
-//         dataAnalise: Joi.date().required(),
-//         evidenciaTexto: Joi.string().optional(),
-//         evidenciaImagem: Joi.string().optional(),
-//     }),
-// });
+/**
+ * Middleware para tratar erros de validação do Celebrate
+ */
+export function celebrateErrorHandler(
+  err: CelebrateError,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  if (err instanceof CelebrateError) {
+    const bodyErrors = err.details.get(Segments.BODY);
+    
+    if (bodyErrors) {
+      const details = bodyErrors.details.map((d: ValidationErrorItem) => ({
+        message: d.message,
+        path: d.path.join('.'),
+      }));
 
-// export { validateCreateComparisonResult };
+      return res.status(400).json({ message: 'Erro de validação', details });
+    }
+  }
+
+  next(err);
+}

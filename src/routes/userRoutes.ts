@@ -1,25 +1,25 @@
-// import express from 'express';
-// import { Router } from 'express';
-// import userController from '../controllers/userControllers.js';
+import express, { Router } from "express";
+import * as userController from "../controllers/userControllers";
 
-// const router = Router();
+// Tipagem explícita para o roteador
+const router: Router = express.Router();
 
-// // Criar um novo usuário (Admin apenas)
-// router.post('/register', userController.createUser);
+// Criar um novo usuário (Admin apenas)
+router.post("/register", userController.createUser);
 
-// // Obter todos os usuários (Admin apenas)
-// router.get('/', userController.getAllUsers);
+// Obter todos os usuários (Admin apenas)
+router.get("/", userController.getAllUsers);
 
-// // Obter usuário por ID
-// router.get('/:id', userController.getUserById);
+// Obter usuário por ID
+router.get("/:id", userController.getUserById);
 
-// // Atualizar um usuário
-// router.put('/:id', userController.updateUser);
+// Atualizar um usuário
+router.put("/:id", userController.updateUser);
 
-// // Atualizar recurso espeficico do usuário 
-// router.patch('/:id', userController.patchUser);
+// Atualizar recurso específico do usuário
+router.patch("/:id", userController.patchUser);
 
-// // Deletar um usuário (Admin apenas)
-// router.delete('/:id', userController.deleteUser);
+// Deletar um usuário (Admin apenas)
+router.delete("/:id", userController.deleteUser);
 
-// export default router;
+export default router;

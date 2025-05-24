@@ -1,25 +1,25 @@
-// import express from 'express';
-// import { Router } from 'express';
-// import reportController from '../controllers/reportControllers.js';
+import express, { Router } from "express";
+import * as reportController from "../controllers/reportControllers";
 
-// const router = Router();
+// Tipagem explícita para o roteador
+const router: Router = express.Router();
 
-// // Criar um novo relatório
-// router.post('/', reportController.createReport);
+// Criar um novo relatório
+router.post("/", reportController.createReport);
 
-// // Obter todos os relatórios
-// router.get('/', reportController.getAllReports);
+// Obter todos os relatórios
+router.get("/", reportController.getAllReports);
 
-// // Obter um relatório por ID
-// router.get('/:id', reportController.getReportById);
+// Obter um relatório por ID
+router.get("/:id", reportController.getReportById);
 
-// // Atualizar um relatório
-// router.put('/:id', reportController.updateReport);
+// Atualizar um relatório
+router.put("/:id", reportController.updateReport);
 
-// // Atualizar recurso especifico do relatório
-// router.patch('/:id', reportController.patchReport);
+// Atualizar recurso específico do relatório
+router.patch("/:id", reportController.patchReport);
 
-// // Deletar um relatório
-// router.delete('/:id', reportController.deleteReport);
+// Deletar um relatório
+router.delete("/:id", reportController.deleteReport);
 
-// export default router;
+export default router;

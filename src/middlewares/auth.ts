@@ -1,30 +1,34 @@
-// // Esse middleware verifica se o token JWT é válido e se o usuário tem permissão para acessar a rota.
+import { Request, Response, NextFunction } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
-// import jwt from 'jsonwebtoken';
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtPayload & { id: string; role: string };
+    }
+  }
+}
 
-// const authenticateToken = (req, res, next) => {
-//     // Pega o token do cabeçalho
-//     const token = req.header('Authorization')?.split(' ')[1]; // Pega o token do cabeçalho Authorization, se existir
+const authenticateToken = (req: Request, res: Response, next: NextFunction): Response | void => {
+  const authHeader = req.header('Authorization');
+  const token = authHeader?.split(' ')[1];
 
-//     if (!token) { // caso não exista token...
-//         return res.status(401).json({ message: 'seu acesso foi negado. Token não fornecido.' });
-//     }
+  if (!token) {
+    return res.status(401).json({ message: 'Acesso negado. Token não fornecido.' });
+  }
 
-//     // aqui verificamos o token
+  try {
+    const secret = process.env.JWT_SECRET as string;
+    const decoded = jwt.verify(token, secret) as JwtPayload & { id: string; role: string };
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error('Erro ao verificar token:', err);
+    return res.status(403).json({
+      message: 'Token inválido.',
+      error: (err as Error).message
+    });
+  }
+};
 
-//     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-//         if (err) {
-//             console.error("Erro ao verificar token:", err);
-//             return res.status(403).json({ 
-//                 message: 'Esse token é inválido.', 
-//                 error: err.message, 
-//                 tokenRecebido: token, 
-//                 chaveSecretaUsada: process.env.JWT_SECRET 
-//             });
-//         }
-//         req.user = user;
-//         next();
-//     });
-// };
-
-// export default authenticateToken;
+export default authenticateToken;

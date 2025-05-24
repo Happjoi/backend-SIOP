@@ -1,83 +1,158 @@
-// import Report from '../models/Report.js';
+import { Request, Response } from "express";
+import Report, { IReport } from "../models/Report";
 
+// Interface para os dados esperados no corpo da requisição de criação de relatório
+interface CreateReportBody {
+  titulo: string;
+  conteudo: string;
+  peritoResponsavel: string;
+  dataCriacao: Date | string;
+  casoRelacionado: string;
+}
 
-// export const createReport = async (req, res) => {
-//   try {
-//     const { titulo, conteudo, peritoResponsavel, dataCriacao, casoRelacionado } = req.body;
-//     const newReport = new Report({ titulo, conteudo, peritoResponsavel, dataCriacao, casoRelacionado });
-//     await newReport.save();
-//     res.status(201).json(newReport);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao criar relatório', error });
-//   }
-// };
+// Interface para os dados esperados no corpo da requisição de atualização parcial
+interface UpdateReportBody {
+  [key: string]: any; // Permite qualquer campo para atualização parcial
+}
 
-// export const getAllReports = async (req, res) => {
-//   try {
-//     const reports = await Report.find();
-//     res.status(200).json(reports);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao obter relatórios', error });
-//   }
-// };
+export const createReport = async (
+  req: Request<{}, {}, CreateReportBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const {
+      titulo,
+      conteudo,
+      peritoResponsavel,
+      dataCriacao,
+      casoRelacionado,
+    } = req.body;
+    const newReport = new Report({
+      titulo,
+      conteudo,
+      peritoResponsavel,
+      dataCriacao,
+      casoRelacionado,
+    });
+    await newReport.save();
+    res.status(201).json(newReport);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao criar relatório", error: error.message });
+  }
+};
 
-// export const getReportById = async (req, res) => {
-//   try {
-//     const report = await Report.findById(req.params.id);
-//     if (!report) {
-//       return res.status(404).json({ message: 'Relatório não encontrado' });
-//     }
-//     res.status(200).json(report);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao obter relatório', error });
-//   }
-// };
+export const getAllReports = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const reports: IReport[] = await Report.find();
+    res.status(200).json(reports);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao obter relatórios", error: error.message });
+  }
+};
 
-// export const updateReport = async (req, res) => {
-//   try {
-//     const report = await Report.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//     if (!report) {
-//       return res.status(404).json({ message: 'Relatório não encontrado' });
-//     }
-//     res.status(200).json(report);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao atualizar relatório', error });
-//   }
-// };
+export const getReportById = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const report: IReport | null = await Report.findById(req.params.id);
+    if (!report) {
+      res.status(404).json({ message: "Relatório não encontrado" });
+      return;
+    }
+    res.status(200).json(report);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao obter relatório", error: error.message });
+  }
+};
 
-// export const patchReport = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updatedData = req.body;
+export const updateReport = async (
+  req: Request<{ id: string }, {}, UpdateReportBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const report: IReport | null = await Report.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!report) {
+      res.status(404).json({ message: "Relatório não encontrado" });
+      return;
+    }
+    res.status(200).json(report);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao atualizar relatório", error: error.message });
+  }
+};
 
-//     const report = await Report.findByIdAndUpdate(id, updatedData, {
-//       new: true,
-//       runValidators: true,
-//     });
+export const patchReport = async (
+  req: Request<{ id: string }, {}, UpdateReportBody>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
 
-//     if (!report) {
-//       return res.status(404).json({ message: 'Relatório não encontrado' });
-//     }
+    const report: IReport | null = await Report.findByIdAndUpdate(
+      id,
+      updatedData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
-//     res.status(200).json(report);
-//   } catch (error) {
-//     res.status(500).json({
-//       message: 'Erro ao atualizar relatório',
-//       error: error.message,
-//     });
-//   }
-// };
+    if (!report) {
+      res.status(404).json({ message: "Relatório não encontrado" });
+      return;
+    }
 
-// export const deleteReport = async (req, res) => {
-//   try {
-//     const report = await Report.findByIdAndDelete(req.params.id);
-//     if (!report) {
-//       return res.status(404).json({ message: 'Relatório não encontrado' });
-//     }
-//     res.status(200).json({ message: 'Relatório deletado com sucesso' });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Erro ao deletar relatório', error });
-//   }
-// };
+    res.status(200).json(report);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao atualizar relatório", error: error.message });
+  }
+};
 
-// export default { createReport, getAllReports, getReportById, updateReport, patchReport, deleteReport };
+export const deleteReport = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const report: IReport | null = await Report.findByIdAndDelete(
+      req.params.id
+    );
+    if (!report) {
+      res.status(404).json({ message: "Relatório não encontrado" });
+      return;
+    }
+    res.status(200).json({ message: "Relatório deletado com sucesso" });
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Erro ao deletar relatório", error: error.message });
+  }
+};
+
+// Exportação como objeto para compatibilidade com a importação padrão
+export default {
+  createReport,
+  getAllReports,
+  getReportById,
+  updateReport,
+  patchReport,
+  deleteReport,
+};

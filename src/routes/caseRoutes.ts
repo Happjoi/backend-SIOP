@@ -1,28 +1,49 @@
-// import authMidd from '../middlewares/auth.js';
-// import roleMidd from '../middlewares/authorization.js';
-// import { Router } from 'express';
-// import caseController from '../controllers/caseControllers.js';
+import express, { Router } from "express";
+import * as caseController from "../controllers/caseControllers";
+import authMidd from "../middlewares/auth";
+import authorizeRole from "../middlewares/authorization";
 
-// const router = Router();
+// Tipagem explícita para o roteador
+const router: Router = express.Router();
 
-// // Criar um novo caso (Perito)
-// router.post('/', caseController.createCase);
+// Rotas ordenadas para evitar conflitos:
+// 1. Endpoint específico `/geo/:id`
+router.get("/geo/:id", caseController.geocodeAddress);
 
-// // Obter todos os casos todos tem o acesso
-// router.get('/', caseController.getAllCases);
+// 2. Endpoints RESTful padrão
+router.get("/", caseController.getAllCases);
 
-// // Obter um caso por ID todos tem o acesso
-// router.get('/:id', caseController.getCaseById);
+router.get("/:id", caseController.getCaseById);
 
-// // Atualizar um caso (Ex: Alterar status) apenas para o perito
-// router.put('/:id', authMidd, roleMidd(['perito']), caseController.updateCase);
+// Rotas protegidas (requer autenticação + autorização de "perito")
+const peritoRole = ["perito"];
 
-// // Atualizar um recurso especifico dentro de casos, apenas o perito
-// router.patch('/:id', authMidd, roleMidd(['perito'], caseController.patchCase))
+router.post(
+  "/",
+  authMidd as express.RequestHandler,
+  authorizeRole(peritoRole),
+  caseController.createCase
+);
 
-// // Deletar um caso (perito)
-// router.delete('/:id', authMidd, roleMidd(['perito']), caseController.deleteCase);
+router.put(
+  "/:id",
+  authMidd as express.RequestHandler,
+  authorizeRole(peritoRole),
+  caseController.updateCase
+);
 
-// router.get('/geo/:id', caseController.geocodeAddress);
+router.patch(
+  "/:id",
+  authMidd as express.RequestHandler,
+  authorizeRole(peritoRole),
+  caseController.patchCase
+);
 
-// export default router;
+router.delete(
+  "/:id",
+  authMidd as express.RequestHandler,
+  authorizeRole(peritoRole),
+  caseController.deleteCase
+);
+
+export default router;

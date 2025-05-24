@@ -1,7 +1,7 @@
-// import multer from 'multer';
+import multer, { StorageEngine, Multer } from 'multer';
 
-// // Armazena em memória ao invés de salvar em disco
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage });
+// Armazena em memória (buffer) para enviar direto ao Cloudinary
+const storage: StorageEngine = multer.memoryStorage();
+const upload: Multer        = multer({ storage });
 
-// export default upload;
+export default upload;
