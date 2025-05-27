@@ -13,6 +13,8 @@ router.get("/geo/:id", caseController.geocodeAddress);
 // 2. Endpoints RESTful padrão
 router.get("/", caseController.getAllCases);
 
+router.get("/user/:id", caseController.getCasesByUser);
+
 router.get("/:id", caseController.getCaseById);
 
 // Rotas protegidas (requer autenticação + autorização de "perito")

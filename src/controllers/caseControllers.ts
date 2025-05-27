@@ -93,7 +93,10 @@ export const getAllCases = async (
   res: Response
 ): Promise<void> => {
   try {
-    const cases: ICase[] = await Case.find().populate('responsavel', 'nome'); // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
+    const cases: ICase[] = await Case.find()
+    .populate('responsavel', 'nome') // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
+    .populate('vitima', 'sexo corEtnia causaMorte')
+    .populate('evidencias', 'tipo status condicao categoria origem localizacao')
     res.status(200).json(cases);
   } catch (error: any) {
     res
@@ -118,6 +121,14 @@ export const getCaseById = async (
       .status(500)
       .json({ message: "Erro ao obter caso", error: error.message });
   }
+};
+
+export const getCasesByUser = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  const cases: ICase[] = await Case.find({ responsavel: req.params.id });
+  res.status(200).json(cases);
 };
 
 export const updateCase = async (
