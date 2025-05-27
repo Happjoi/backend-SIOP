@@ -12,7 +12,7 @@ import reportRoutes from "./routes/reportRoutes";
 import caseRoutes from "./routes/caseRoutes";
 import victimRoutes from "./routes/victimRoutes";
 import router from "./routes/authRoutes";   
-import dashboard from './routes/dashboardRoutes'
+import dashboard from './routes/dashBoardRoutes'
 // import imageEvidenceRoutes from './src/routes/imageEvidenceRoutes';
 
 dotenv.config();
