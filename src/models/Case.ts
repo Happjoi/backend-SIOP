@@ -13,6 +13,8 @@ export interface ICase extends Document {
   vitima: mongoose.Types.ObjectId;         
   causaMorte: string;
   instituicao: string;
+  caseImageUrl?: string;
+  caseImagePublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +30,9 @@ const caseSchema = new Schema<ICase>({
   responsavel: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   vitima: [{ type: Schema.Types.ObjectId, ref: 'Victim', required: true }],
   causaMorte: { type: String, required: true },
-  instituicao: { type: String, required: true }
+  instituicao: { type: String, required: true },
+  caseImageUrl:      { type: String },
+  caseImagePublicId: { type: String }
 }, { timestamps: true });
 
 // Aplica plugin de formatação de data

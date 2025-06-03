@@ -23,6 +23,9 @@ export interface IEvidence extends Document {
   observacoesTecnicas?: string;
   descricaoDetalhada?: string;
 
+  laudoConteudo?: string;
+  laudoGeradoEm?: Date;
+
   relatorios: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +48,9 @@ const evidenceSchema = new Schema<IEvidence>({
   localizacao: { type: String, required: true },
   observacoesTecnicas: { type: String },
   descricaoDetalhada: { type: String },
+
+  laudoConteudo: { type: String },
+  laudoGeradoEm: { type: Date },
 
   relatorios: [{ type: Schema.Types.ObjectId, ref: 'Report' }],
 }, { timestamps: true });

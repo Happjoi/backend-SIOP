@@ -155,6 +155,9 @@ export const deleteReport = async (
       .status(500)
       .json({ message: "Erro ao deletar relatório", error: error.message });
   }
+
+
+  
 };
 
 // Exportação como objeto para compatibilidade com a importação padrão

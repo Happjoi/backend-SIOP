@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import * as caseController from "../controllers/caseControllers";
 import authMidd from "../middlewares/auth";
+import upload from "../middlewares/upload";
 import authorizeRole from "../middlewares/authorization";
 
 // Tipagem explícita para o roteador
@@ -47,5 +48,15 @@ router.delete(
   authorizeRole(peritoRole),
   caseController.deleteCase
 );
+
+// **nova** rota para upload de foto do caso:
+router.post(
+  '/:id/casephoto',
+  authMidd as express.RequestHandler,
+  authorizeRole(peritoRole),
+  upload.single('file'),
+  caseController.uploadCasePhoto
+);
+
 
 export default router;

@@ -30,7 +30,7 @@ router.delete("/upload/:id", validateId, deleteImage);
 
 // CRUD textual ou geral
 
-router.post("/cases/:caseId", validateCreateEvidence, createEvidence);
+router.post("/cases/:caseId",validateCreateEvidence, createEvidence);
 router.get("/", getAllEvidences);
 router.get("/:id", validateId, getEvidenceById);
 router.put("/:id", validateId, validateUpdateEvidence, updateEvidence);

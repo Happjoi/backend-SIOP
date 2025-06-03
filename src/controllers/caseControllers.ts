@@ -1,7 +1,20 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import axios, { AxiosResponse } from "axios";
 import Case, { ICase } from "../models/Case";
+import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import streamifier from 'streamifier';
+import 'dotenv/config';
+
+cloudinary.config({
+  cloud_name:   process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key:      process.env.CLOUDINARY_API_KEY!,
+  api_secret:   process.env.CLOUDINARY_API_SECRET!,
+});
+
+interface UploadReq extends Request {
+  file?: Express.Multer.File;
+}
 
 // Interface para os dados esperados no corpo da requisição de criação de caso
 interface CreateCaseBody {
@@ -257,6 +270,55 @@ export const geocodeAddress = async (
   }
 };
 
+/**
+ * POST /api/cases/:id/photo
+ * Faz upload da foto ilustrativa do Case, atualiza caseImageUrl e caseImagePublicId.
+ */
+export const uploadCasePhoto = async (
+  req: UploadReq,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    if (!req.file) {
+      res.status(400).json({ message: 'Arquivo não enviado.' });
+      return;
+    }
+
+    const caso = await Case.findById(id);
+    if (!caso) {
+      res.status(404).json({ message: 'Case não encontrado.' });
+      return;
+    }
+
+    // apaga imagem antiga se existir
+    if (caso.caseImagePublicId) {
+      await cloudinary.uploader.destroy(caso.caseImagePublicId);
+    }
+
+    // faz upload
+    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'case_photos' },
+        (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+          if (err) return reject(err);
+          resolve(result!);
+        }
+      );
+      streamifier.createReadStream(req.file!.buffer).pipe(stream);
+    });
+
+    caso.caseImageUrl      = uploadResult.secure_url;
+    caso.caseImagePublicId = uploadResult.public_id;
+    await caso.save();
+
+    res.status(200).json({ caseImageUrl: caso.caseImageUrl });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Exportação como objeto para compatibilidade com a importação padrão
 export default {
   createCase,
@@ -266,4 +328,5 @@ export default {
   patchCase,
   deleteCase,
   geocodeAddress,
+  uploadCasePhoto,
 };
