@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import VictimModel, { IVictim } from '../models/victim';
+import VictimModel, { IVictim } from '../models/Victim';
 import CaseModel from "../models/Case";
 
 /**
