@@ -19,18 +19,16 @@ import {
   validatePatchEvidence,
 } from "../middlewares/evidenceValidation";
 
-
 const router = Router();
 
 // Upload de imagem (chamada interna à createEvidence + uploadImage)
-router.post("/cases/:caseId/upload", upload.single("file"), validateUploadImage, uploadImage);
+router.post("/upload", upload.single("file"), validateUploadImage, uploadImage);
 
 // Deleta imagem
 router.delete("/upload/:id", validateId, deleteImage);
 
 // CRUD textual ou geral
-
-router.post("/cases/:caseId", validateCreateEvidence, createEvidence);
+router.post("/", validateCreateEvidence, createEvidence);
 router.get("/", getAllEvidences);
 router.get("/:id", validateId, getEvidenceById);
 router.put("/:id", validateId, validateUpdateEvidence, updateEvidence);

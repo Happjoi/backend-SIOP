@@ -26,7 +26,7 @@ const caseSchema = new Schema<ICase>({
   evidencias: [{ type: Schema.Types.ObjectId, ref: 'Evidence' }],
   relatorios: [{ type: Schema.Types.ObjectId, ref: 'Report' }],
   responsavel: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  vitima: [{ type: Schema.Types.ObjectId, ref: 'Victim', required: true }],
+  vitima: { type: Schema.Types.ObjectId, ref: 'Victim', required: true },
   causaMorte: { type: String, required: true },
   instituicao: { type: String, required: true }
 }, { timestamps: true });

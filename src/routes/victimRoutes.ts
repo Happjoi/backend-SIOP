@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import victimController from '../controllers/victimControllers';
 
-
 const router = Router();
 
 // CRUD básico
-router.post    ('/cases/:caseId',  victimController.createVictim);
+router.post    ('/',            victimController.createVictim);
 router.get     ('/',            victimController.getAllVictims);
 router.get     ('/:id',         victimController.getVictimById);
 router.put     ('/:id',         victimController.updateVictim);

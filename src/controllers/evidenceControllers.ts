@@ -36,12 +36,7 @@ export const uploadImage = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { caseId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      res.status(400).json({ message: "ID do caso inválido." });
-      return;
-    }
-
+    // 1) Campos obrigatórios do corpo
     const {
       tipo,
       coletadoPor,
@@ -54,26 +49,32 @@ export const uploadImage = async (
       observacoesTecnicas,
       descricaoDetalhada,
     } = req.body;
-
     if (!req.file) {
       res.status(400).json({ message: "Arquivo não enviado." });
       return;
     }
-
+    // 2) Conversão de IDs
     const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
     const objIdVitima = new mongoose.Types.ObjectId(vitima);
 
-    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "dontforensic" },
-        (err, result) => {
-          if (err) return reject(err);
-          resolve(result!);
-        }
-      );
-      streamifier.createReadStream(req.file!.buffer).pipe(stream);
-    });
+    // 3) Upload ao Cloudinary
+    const uploadResult = await new Promise<UploadApiResponse>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "dontforensic" },
+          (
+            err: UploadApiErrorResponse | undefined,
+            result: UploadApiResponse | undefined
+          ) => {
+            if (err) return reject(err);
+            resolve(result!);
+          }
+        );
+        streamifier.createReadStream(req.file!.buffer).pipe(stream);
+      }
+    );
 
+    // 4) Criação do documento
     const newEv = await EvidenceModel.create({
       tipo,
       dataColeta: new Date(),
@@ -89,12 +90,7 @@ export const uploadImage = async (
       observacoesTecnicas,
       descricaoDetalhada,
       relatorios: [],
-      caso: new mongoose.Types.ObjectId(caseId),
-    });
-
-    await CaseModel.findByIdAndUpdate(caseId, {
-      $push: { evidencias: newEv._id }
-    });
+    } as Partial<IEvidence>);
 
     res.status(201).json(newEv);
   } catch (err) {
@@ -132,17 +128,15 @@ export const deleteImage = async (
  * Cria uma evidência textual (sem imagem).
  */
 export const createEvidence = async (
-  req: Request<{ caseId: string }, {}, Partial<IEvidence>>,
+  req: Request<
+    {},
+    {},
+    Partial<IEvidence> & { coletadoPor: string; vitima: string }
+  >,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { caseId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      res.status(400).json({ message: "ID do caso inválido." });
-      return;
-    }
-
     const {
       tipo,
       coletadoPor,
@@ -155,11 +149,13 @@ export const createEvidence = async (
       conteudo,
       observacoesTecnicas,
       descricaoDetalhada,
-    } = req.body;
+    } = req.body as any;
 
+    // Conversão de IDs
     const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
     const objIdVitima = new mongoose.Types.ObjectId(vitima);
 
+    // Cria documento
     const newEv = await EvidenceModel.create({
       tipo,
       dataColeta: new Date(),
@@ -174,12 +170,7 @@ export const createEvidence = async (
       observacoesTecnicas,
       descricaoDetalhada,
       relatorios: [],
-      caso: new mongoose.Types.ObjectId(caseId),
-    });
-
-    await CaseModel.findByIdAndUpdate(caseId, {
-      $push: { evidencias: newEv._id }
-    });
+    } as Partial<IEvidence>);
 
     res.status(201).json(newEv);
   } catch (err) {

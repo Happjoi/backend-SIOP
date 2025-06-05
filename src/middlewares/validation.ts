@@ -1,8 +1,6 @@
 import { CelebrateError, Segments } from 'celebrate';
-import { param, validationResult } from "express-validator";
 import { Request, Response, NextFunction } from 'express';
 import { ValidationErrorItem } from 'joi';
-import { ParamsDictionary } from "express-serve-static-core";
 
 /**
  * Middleware para tratar erros de validação do Celebrate
@@ -22,14 +20,9 @@ export function celebrateErrorHandler(
         path: d.path.join('.'),
       }));
 
-      
-
       return res.status(400).json({ message: 'Erro de validação', details });
     }
   }
 
   next(err);
 }
-
-
-

@@ -1,33 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import VictimModel, { IVictim } from '../models/victim';
-import CaseModel from "../models/Case";
+import VictimModel, { IVictim } from '../models/Victim'
 
 /**
  * Cria uma nova vítima
  */
 export const createVictim = async (
-  req: Request<{ caseId: string }, {}, IVictim>,
+  req: Request<{}, {}, { nic: string; nome?: string; sexo?: string; corEtnia?: string; documento?: string; dataNascimento?: string; endereco?: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { caseId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      res.status(400).json({ message: "ID do caso inválido." });
-      return;
-    }
-
     const { nic, nome, sexo, corEtnia, documento, dataNascimento, endereco } = req.body;
-    
     if (!nic) {
-      res.status(400).json({ message: 'NIC é obrigatório' });
+      res.status(400).json({ message: 'Campo obrigatório ausente: nic' });
       return;
     }
 
     const exists = await VictimModel.findOne({ nic });
     if (exists) {
-      res.status(409).json({ message: 'Vítima já cadastrada com este NIC' });
+      res.status(409).json({ message: 'Já existe vítima com este NIC.' });
       return;
     }
 
@@ -38,19 +30,15 @@ export const createVictim = async (
       corEtnia,
       documento,
       dataNascimento: dataNascimento ? new Date(dataNascimento) : undefined,
-      endereco,
-      caso: new mongoose.Types.ObjectId(caseId)
-    });
-
-    await CaseModel.findByIdAndUpdate(caseId, {
-      $push: { vitimas: newVictim._id }
-    });
+      endereco
+    } as Partial<IVictim>);
 
     res.status(201).json(newVictim);
   } catch (err) {
     next(err);
   }
 };
+
 /**
  * Lista todas as vítimas
  */
