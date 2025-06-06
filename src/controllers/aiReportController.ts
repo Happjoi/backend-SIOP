@@ -37,9 +37,24 @@ export const generateReportForCase = async (
     };
 
     // 3) Constroi um prompt “genérico” (você vai preencher com seu texto mais detalhado depois)
-    const prompt = `
-      Gere um relatório detalhado para o seguinte caso:
-      ${JSON.stringify(casePayload, null, 2)}
+    const prompt = 
+         `
+        ${JSON.stringify(casePayload, null, 2)}
+        Você é um perito judicial responsável por elaborar um **relatório técnico** baseado em informações de um caso forense. Abaixo estão os dados do caso:
+
+
+
+        Gere um relatório com a seguinte estrutura:
+        1. **Identificação do Caso**: Título, status atual e localização.
+        2. **Resumo do Caso**: Breve descrição do ocorrido e informações relevantes.
+        3. **Detalhes da Vítima**: NIC, nome, sexo e etnia.
+        4. **Responsável pelo Caso**: Nome completo e e-mail do perito responsável.
+        5. **Análise Técnica**: Interpretação dos dados apresentados e possíveis implicações (ex: causa da morte, condições do local).
+        6. **Conclusão**: Considerações finais com base nas informações fornecidas.
+
+        Escreva de forma clara, formal, impessoal e objetiva. Utilize linguagem técnica e evite repetições. Este relatório pode ser incluído em um processo judicial, portanto, mantenha a coerência e profissionalismo.
+        ;
+
 
       → Quando gerar, considere apenas as informações “essenciais” (ignorar createdAt, updatedAt, imagens etc).
       → O texto final deve ser um relatório bem organizado.  

@@ -10,10 +10,8 @@ router.post("/login", authController.login);
 // Logout do usuário
 router.post("/logout", authController.logout);
 
-// Solicitação de esquecimento de senha
-router.post("/forgot-password", authController.forgotPassword);
+// Esqueceu a senha → recebe { email }
+router.post('/forgot-password', authController.forgotPasswordEmail);
 
-// Redefinição de senha
-router.post("/reset-password", authController.resetPassword);
 
 export default router;

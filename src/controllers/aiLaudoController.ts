@@ -36,10 +36,20 @@ export const generateLaudoForEvidence = async (
     };
 
     // 3) Monta o prompt (você pode personalizar a descrição depois)
-    const prompt = `
-      Gere um laudo técnico para a seguinte evidência:
+    const prompt = 
+      `
       ${JSON.stringify(evidencePayload, null, 2)}
+      Você é um perito forense especialista em análise de evidências criminais. Com base nos dados fornecidos, redija um **laudo técnico** detalhado, claro e objetivo, sobre a evidência descrita a seguir:
 
+      O laudo deve incluir:
+      - Uma breve introdução com o tipo e origem da evidência;
+      - A condição da evidência no momento da coleta;
+      - Possíveis implicações técnicas ou forenses baseadas na descrição detalhada e observações técnicas;
+      - Conclusão com hipóteses ou observações relevantes ao caso.
+
+      Não use linguagem informal. O texto deve ser impessoal, técnico e em terceira pessoa. Ignore campos irrelevantes como timestamps ou IDs.
+      ;
+      
       → Considere apenas os campos “essenciais” acima para construir um laudo conciso.
       → O texto final deve explicar o estado da evidência, possíveis implicações, etc.
     `;

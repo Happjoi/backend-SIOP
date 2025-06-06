@@ -1,6 +1,4 @@
 // src/utils/llmClient.ts
-import { RequestHandler } from 'express';
-import { v2 as  UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 
@@ -15,7 +13,9 @@ export interface GroqResponse {
 }
 
 /**
- * Cria a chamada à API Groq para gerar texto a partir de um prompt.
+ * Chama a API Groq para gerar texto a partir de um prompt.
+ * @param message Texto do prompt a enviar.
+ * @returns Promise<GroqResponse> contendo array de choices.
  */
 export async function getGroqChatCompletion(message: string): Promise<GroqResponse> {
   if (!message || message.trim().length === 0) {
@@ -25,6 +25,6 @@ export async function getGroqChatCompletion(message: string): Promise<GroqRespon
     messages: [{ role: 'user', content: message.trim() }],
     model: 'llama-3.3-70b-versatile',
     temperature: 0.7,
-    max_tokens: 2000, // ajustável
+    max_tokens: 3000, // Ajustável conforme necessidade
   });
 }
