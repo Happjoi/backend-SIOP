@@ -6,6 +6,8 @@ import cors from "cors";
 import app from "./app";
 import Loaders from "./loaders/startDb";
 import { error } from "console";
+import http from 'http';
+import WebSocketService from './services/websocketService';
 
 dotenv.config();
 
@@ -22,12 +24,21 @@ app.get("/", (req: ServerRequest, res: ServerResponse) => {
 // Função de inicialização do servidor
 async function startServer(): Promise<void> {
   await Loaders.start();
+  
+  // Cria o servidor HTTP
+  const server = http.createServer(app);
+  
+  // Inicializa o serviço WebSocket
+  const wsService = new WebSocketService(server);
+  
   // Porta de execução
   type Port = number | string;
   const port: Port = process.env.PORT || 3000;
-  app.listen(port, () => {
+  
+  server.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
   });
+  
 }
 
 startServer();
