@@ -17,6 +17,7 @@ const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
   role: { type: String, enum: ['perito','admin','assistente'], required: true },
+  peritoAfiliado: { type: Schema.Types.ObjectId, ref: 'User' }, // opcional, só para assistentes
 
   // Campos para reset de senha:
   profileImageUrl:      { type: String },

@@ -10,7 +10,7 @@ export interface ICase extends Document {
   evidencias: mongoose.Types.ObjectId[];
   relatorios: mongoose.Types.ObjectId[];
   responsavel: mongoose.Types.ObjectId; 
-  vitima: mongoose.Types.ObjectId;         
+  vitima: mongoose.Types.ObjectId[];         
   causaMorte: string;
   instituicao: string;
   caseImageUrl?: string;

@@ -128,18 +128,18 @@ export const deleteImage = async (
 };
 
 /**
- * POST /api/evidences
+ * POST /api/cases/:caseId/victims
  * Cria uma evidência textual (sem imagem).
  */
 export const createEvidence = async (
-  req: Request<{ caseId: string }, {}, Partial<IEvidence>>,
+  req: Request<{ caseId: string }, {}, Partial<IEvidence> & { coletadoPor: string; vitima: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { caseId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      res.status(400).json({ message: "ID do caso inválido." });
+      res.status(400).json({ message: 'ID de caso inválido.' });
       return;
     }
 
@@ -155,17 +155,18 @@ export const createEvidence = async (
       conteudo,
       observacoesTecnicas,
       descricaoDetalhada,
-    } = req.body;
+    } = req.body as any;
 
-    const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
-    const objIdVitima = new mongoose.Types.ObjectId(vitima);
+    const objColetado = new mongoose.Types.ObjectId(coletadoPor);
+    const objVitima   = new mongoose.Types.ObjectId(vitima);
 
+    // cria evidência (adapte se tiver campo `caso` no seu schema Evidence)
     const newEv = await EvidenceModel.create({
       tipo,
-      dataColeta: new Date(),
-      coletadoPor: objIdColetado,
+      dataColeta:        new Date(),
+      coletadoPor:       objColetado,
       conteudo,
-      vitima: objIdVitima,
+      vitima:            objVitima,
       categoria,
       origem,
       condicao,
@@ -173,10 +174,12 @@ export const createEvidence = async (
       localizacao,
       observacoesTecnicas,
       descricaoDetalhada,
-      relatorios: [],
-      caso: new mongoose.Types.ObjectId(caseId),
-    });
+      relatorios:        [],
+      // se quiser linkar no próprio documento:
+      caso:              caseId
+    } as Partial<IEvidence>);
 
+    // faz push no array evidencias do caso
     await CaseModel.findByIdAndUpdate(caseId, {
       $push: { evidencias: newEv._id }
     });
@@ -186,7 +189,6 @@ export const createEvidence = async (
     next(err);
   }
 };
-
 /**
  * GET /api/evidences
  * Lista todas as evidências.

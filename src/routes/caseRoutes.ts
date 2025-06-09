@@ -18,6 +18,10 @@ router.get("/user/:id", caseController.getCasesByUser);
 
 router.get("/:id", caseController.getCaseById);
 
+// → NOVAS ROTAS para listar evidencias e vitimas presentes dentro do caso
+router.get('/:id/evidences',                      caseController.getCaseEvidences);
+router.get('/:id/victims',                        caseController.getCaseVictims);
+
 // Rotas protegidas (requer autenticação + autorização de "perito")
 const peritoRole = ["perito"];
 

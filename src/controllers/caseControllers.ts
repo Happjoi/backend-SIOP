@@ -46,7 +46,13 @@ export const createCase = async (
   req: Request<{}, {}, CreateCaseBody>,
   res: Response
 ): Promise<void> => {
+  
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem criar casos.' });
+      return;
+    }
     console.log(req.body);
     const {
       titulo,
@@ -108,7 +114,7 @@ export const getAllCases = async (
   try {
     const cases: ICase[] = await Case.find()
     .populate('responsavel', 'nome') // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
-    .populate('vitima', 'sexo corEtnia causaMorte')
+    .populate('vitima','nic sexo corEtnia causaMorte')
     .populate('evidencias', 'tipo status condicao categoria origem localizacao')
     res.status(200).json(cases);
   } catch (error: any) {
@@ -149,6 +155,13 @@ export const updateCase = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
+
+
     const caso: ICase | null = await Case.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -171,6 +184,11 @@ export const patchCase = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
     const { id } = req.params;
     const updateData = req.body;
 
@@ -201,6 +219,12 @@ export const deleteCase = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
+
     const caso: ICase | null = await Case.findByIdAndDelete(req.params.id);
     if (!caso) {
       res.status(404).json({ message: "Caso não encontrado" });
@@ -319,6 +343,99 @@ export const uploadCasePhoto = async (
   }
 };
 
+/**
+ * GET /api/cases/:id/evidences
+ * Retorna todas as evidências associadas ao caso.
+ */
+export const getCaseEvidences = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.isValidObjectId(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
+      return;
+    }
+
+    const foundCase = await Case.findById(caseId)
+      .populate('evidencias'); // popula o array de evidências
+
+    if (!foundCase) {
+      res.status(404).json({ message: 'Caso não encontrado.' });
+      return;
+    }
+
+    res.status(200).json(foundCase.evidencias);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/:id/victims
+ * Retorna todas as vítimas associadas ao caso.
+ */
+export const getCaseVictims = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.isValidObjectId(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
+      return;
+    }
+
+    const foundCase = await Case.findById(caseId)
+      .populate('vitima'); // popula o array de vítimas
+
+    if (!foundCase) {
+      res.status(404).json({ message: 'Caso não encontrado.' });
+      return;
+    }
+
+    res.status(200).json(foundCase.vitima);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+/* Logica para o assistente conseguir visualizar os casos que o perito está vinculado  */
+export const getCasesByUserRole = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id, role } = req.user!;
+
+    let userIdToUse = id;
+
+    if (role === 'assistente') {
+      const assistente = await UserModel.findById(id);
+      if (!assistente?.peritoAfiliado) {
+        res.status(400).json({ message: 'Assistente sem vínculo com perito.' });
+        return;
+      }
+      userIdToUse = assistente.peritoAfiliado.toString();
+    }
+
+    const casos = await Case.find({ responsavel: userIdToUse })
+      .populate('responsavel', 'nome')
+      .populate('vitima','nic sexo corEtnia causaMorte')
+      .populate('evidencias', 'tipo status condicao categoria origem localizacao');
+
+    res.status(200).json(casos);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 // Exportação como objeto para compatibilidade com a importação padrão
 export default {
   createCase,
@@ -329,4 +446,6 @@ export default {
   deleteCase,
   geocodeAddress,
   uploadCasePhoto,
+  getCaseVictims,
+  getCaseEvidences,
 };
