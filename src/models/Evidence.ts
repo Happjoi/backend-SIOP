@@ -18,7 +18,6 @@ export interface IEvidence extends Document {
   categoria: string;
   origem: string;
   condicao: "Bem conservada" | "Danificada" | "Parcial" | string;
-  status: "Aberto" | "Em Análise" | "Fechado";
   localizacao: string; // Onde a evidência foi encontrada
   observacoesTecnicas?: string;
   descricaoDetalhada?: string;
@@ -51,11 +50,6 @@ const evidenceSchema = new Schema<IEvidence>(
     condicao: {
       type: String,
       enum: ["Bem conservada", "Danificada", "Parcial"],
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["Aberto", "Em Análise", "Fechado"],
       required: true,
     },
     localizacao: { type: String, required: true },

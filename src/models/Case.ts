@@ -11,7 +11,6 @@ export interface ICase extends Document {
   relatorios: mongoose.Types.ObjectId[];
   responsavel: mongoose.Types.ObjectId; 
   vitima: mongoose.Types.ObjectId[];         
-  causaMorte: string;
   instituicao: string;
   caseImageUrl?: string;
   caseImagePublicId?: string;
@@ -29,7 +28,6 @@ const caseSchema = new Schema<ICase>({
   relatorios: [{ type: Schema.Types.ObjectId, ref: 'Report' }],
   responsavel: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   vitima: [{ type: Schema.Types.ObjectId, ref: 'Victim', required: true }],
-  causaMorte: { type: String, required: true },
   instituicao: { type: String, required: true },
   caseImageUrl:      { type: String },
   caseImagePublicId: { type: String }

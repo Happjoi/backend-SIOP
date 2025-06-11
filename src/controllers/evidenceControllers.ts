@@ -364,7 +364,6 @@ export const generateEvidencePDF = async (
     doc.text(`Categoria: ${evidence.categoria || "N/A"}`);
     doc.text(`Origem: ${evidence.origem || "N/A"}`);
     doc.text(`Condição: ${evidence.condicao || "N/A"}`);
-    doc.text(`Status: ${evidence.status || "N/A"}`);
     doc.text(`Localização: ${evidence.localizacao || "N/A"}`);
     doc.moveDown();
     doc.text(`Observações Técnicas: ${evidence.observacoesTecnicas || "N/A"}`);
