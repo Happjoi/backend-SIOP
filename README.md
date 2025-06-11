@@ -115,6 +115,11 @@ backend-SIOP/
 │ ├── generateRandomPassword.ts
 │ └── llmClient.ts
 └── .env
+└── .gitignore
+└── .package-lock.json
+└── .package.json
+└── readme.md
+└── tsconfig.json
 ```
     
 
