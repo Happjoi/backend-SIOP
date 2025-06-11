@@ -1,16 +1,11 @@
-// src/controllers/evidenceControllers.ts
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import EvidenceModel, { IEvidence } from "../models/Evidence";
-import UserModel, { IUser } from "../models/User";
-import CaseModel, { ICase } from "../models/Case";
-import {
-  v2 as cloudinary,
-  UploadApiResponse,
-  UploadApiErrorResponse,
-} from "cloudinary";
+import CaseModel from "../models/Case";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import streamifier from "streamifier";
-import "dotenv/config"; // Garanta que dotenv esteja configurado (redundante se estiver no app.ts)
+import PDFDocument from "pdfkit";
+import "dotenv/config";
 
 // Configure o Cloudinary usando as variáveis de ambiente
 cloudinary.config({
@@ -36,7 +31,12 @@ export const uploadImage = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // 1) Campos obrigatórios do corpo
+    const { caseId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      res.status(400).json({ message: "ID do caso inválido." });
+      return;
+    }
+
     const {
       tipo,
       coletadoPor,
@@ -49,23 +49,20 @@ export const uploadImage = async (
       observacoesTecnicas,
       descricaoDetalhada,
     } = req.body;
+
     if (!req.file) {
       res.status(400).json({ message: "Arquivo não enviado." });
       return;
     }
-    // 2) Conversão de IDs
+
     const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
     const objIdVitima = new mongoose.Types.ObjectId(vitima);
 
-    // 3) Upload ao Cloudinary
     const uploadResult = await new Promise<UploadApiResponse>(
       (resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "dontforensic" },
-          (
-            err: UploadApiErrorResponse | undefined,
-            result: UploadApiResponse | undefined
-          ) => {
+          (err, result) => {
             if (err) return reject(err);
             resolve(result!);
           }
@@ -74,7 +71,6 @@ export const uploadImage = async (
       }
     );
 
-    // 4) Criação do documento
     const newEv = await EvidenceModel.create({
       tipo,
       dataColeta: new Date(),
@@ -90,7 +86,12 @@ export const uploadImage = async (
       observacoesTecnicas,
       descricaoDetalhada,
       relatorios: [],
-    } as Partial<IEvidence>);
+      caso: new mongoose.Types.ObjectId(caseId),
+    });
+
+    await CaseModel.findByIdAndUpdate(caseId, {
+      $push: { evidencias: newEv._id },
+    });
 
     res.status(201).json(newEv);
   } catch (err) {
@@ -124,19 +125,21 @@ export const deleteImage = async (
 };
 
 /**
- * POST /api/evidences
+ * POST /api/cases/:caseId/victims
  * Cria uma evidência textual (sem imagem).
  */
 export const createEvidence = async (
-  req: Request<
-    {},
-    {},
-    Partial<IEvidence> & { coletadoPor: string; vitima: string }
-  >,
+  req: Request<{ caseId: string }, {}, Partial<IEvidence> & { coletadoPor: string; vitima: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    const { caseId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
+      return;
+    }
+
     const {
       tipo,
       coletadoPor,
@@ -151,17 +154,16 @@ export const createEvidence = async (
       descricaoDetalhada,
     } = req.body as any;
 
-    // Conversão de IDs
-    const objIdColetado = new mongoose.Types.ObjectId(coletadoPor);
-    const objIdVitima = new mongoose.Types.ObjectId(vitima);
+    const objColetado = new mongoose.Types.ObjectId(coletadoPor);
+    const objVitima   = new mongoose.Types.ObjectId(vitima);
 
-    // Cria documento
+    // cria evidência (adapte se tiver campo `caso` no seu schema Evidence)
     const newEv = await EvidenceModel.create({
       tipo,
-      dataColeta: new Date(),
-      coletadoPor: objIdColetado,
+      dataColeta:        new Date(),
+      coletadoPor:       objColetado,
       conteudo,
-      vitima: objIdVitima,
+      vitima:            objVitima,
       categoria,
       origem,
       condicao,
@@ -169,15 +171,21 @@ export const createEvidence = async (
       localizacao,
       observacoesTecnicas,
       descricaoDetalhada,
-      relatorios: [],
+      relatorios:        [],
+      // se quiser linkar no próprio documento:
+      caso:              caseId
     } as Partial<IEvidence>);
+
+    // faz push no array evidencias do caso
+    await CaseModel.findByIdAndUpdate(caseId, {
+      $push: { evidencias: newEv._id },
+    });
 
     res.status(201).json(newEv);
   } catch (err) {
     next(err);
   }
 };
-
 /**
  * GET /api/evidences
  * Lista todas as evidências.
@@ -289,13 +297,81 @@ export const deleteEvidence = async (
   }
 };
 
-export default {
-  uploadImage,
-  deleteImage,
-  createEvidence,
-  getAllEvidences,
-  getEvidenceById,
-  updateEvidence,
-  patchEvidence,
-  deleteEvidence,
+/**
+ * GET /api/evidences/:id/pdf
+ * Gera e retorna um PDF do laudo (evidência).
+ */
+export const generateEvidencePDF = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const evidence = await EvidenceModel.findById(req.params.id);
+    if (!evidence) {
+      res.status(404).json({ message: "Evidência não encontrada." });
+      return;
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks: Buffer[] = [];
+
+    // Capture PDF output into a buffer
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", async () => {
+      const pdfBuffer = Buffer.concat(chunks);
+
+      try {
+        const uploadResult = await new Promise<UploadApiResponse>(
+          (resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              { folder: "dontforensic/laudos", resource_type: "raw" },
+              (err, result) => {
+                if (err) return reject(err);
+                resolve(result!);
+              }
+            );
+            streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
+          }
+        );
+
+        // Salvar URL e publicId do PDF na evidência, com campos corretos:
+        evidence.pdfUrl = uploadResult.secure_url;
+        evidence.pdfPublicId = uploadResult.public_id;
+        evidence.laudoGeradoEm = new Date();
+
+        await evidence.save();
+
+        res.status(200).json({
+          message: "PDF gerado e enviado para o Cloudinary com sucesso.",
+          pdfUrl: uploadResult.secure_url,
+        });
+      } catch (uploadErr) {
+        next(uploadErr);
+      }
+    });
+
+    // Conteúdo básico do PDF - pode ser customizado
+    doc.fontSize(20).text("Laudo da Evidência", { align: "center" });
+    doc.moveDown();
+
+    doc.fontSize(14).text(`Tipo: ${evidence.tipo || "N/A"}`);
+    doc.text(
+      `Data da coleta: ${evidence.dataColeta?.toLocaleDateString() || "N/A"}`
+    );
+    doc.text(`Coletado por: ${evidence.coletadoPor?.toString() || "N/A"}`);
+    doc.text(`Vitima: ${evidence.vitima?.toString() || "N/A"}`);
+    doc.text(`Categoria: ${evidence.categoria || "N/A"}`);
+    doc.text(`Origem: ${evidence.origem || "N/A"}`);
+    doc.text(`Condição: ${evidence.condicao || "N/A"}`);
+    doc.text(`Localização: ${evidence.localizacao || "N/A"}`);
+    doc.moveDown();
+    doc.text(`Observações Técnicas: ${evidence.observacoesTecnicas || "N/A"}`);
+    doc.moveDown();
+    doc.text(`Descrição Detalhada: ${evidence.descricaoDetalhada || "N/A"}`);
+
+    doc.end();
+  } catch (err) {
+    next(err);
+  }
 };

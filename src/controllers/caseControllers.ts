@@ -1,7 +1,20 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import axios, { AxiosResponse } from "axios";
 import Case, { ICase } from "../models/Case";
+import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import streamifier from 'streamifier';
+import 'dotenv/config';
+
+cloudinary.config({
+  cloud_name:   process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key:      process.env.CLOUDINARY_API_KEY!,
+  api_secret:   process.env.CLOUDINARY_API_SECRET!,
+});
+
+interface UploadReq extends Request {
+  file?: Express.Multer.File;
+}
 
 // Interface para os dados esperados no corpo da requisição de criação de caso
 interface CreateCaseBody {
@@ -33,7 +46,13 @@ export const createCase = async (
   req: Request<{}, {}, CreateCaseBody>,
   res: Response
 ): Promise<void> => {
+  
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem criar casos.' });
+      return;
+    }
     console.log(req.body);
     const {
       titulo,
@@ -93,7 +112,10 @@ export const getAllCases = async (
   res: Response
 ): Promise<void> => {
   try {
-    const cases: ICase[] = await Case.find().populate('responsavel', 'nome'); // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
+    const cases: ICase[] = await Case.find()
+    .populate('responsavel', 'nome') // Popula o campo responsavel com o nome do usuário é preciso fazer isso no resto dos controllers!
+    .populate('vitima','nic sexo corEtnia causaMorte')
+    .populate('evidencias', 'tipo status condicao categoria origem localizacao')
     res.status(200).json(cases);
   } catch (error: any) {
     res
@@ -120,11 +142,26 @@ export const getCaseById = async (
   }
 };
 
+export const getCasesByUser = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  const cases: ICase[] = await Case.find({ responsavel: req.params.id });
+  res.status(200).json(cases);
+};
+
 export const updateCase = async (
   req: Request<{ id: string }, {}, UpdateCaseBody>,
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
+
+
     const caso: ICase | null = await Case.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -147,6 +184,11 @@ export const patchCase = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
     const { id } = req.params;
     const updateData = req.body;
 
@@ -177,6 +219,12 @@ export const deleteCase = async (
   res: Response
 ): Promise<void> => {
   try {
+
+    if (req.user?.role === 'assistente') {
+      res.status(403).json({ message: 'Assistentes não podem atualizar casos.' });
+      return;
+    }
+
     const caso: ICase | null = await Case.findByIdAndDelete(req.params.id);
     if (!caso) {
       res.status(404).json({ message: "Caso não encontrado" });
@@ -246,6 +294,148 @@ export const geocodeAddress = async (
   }
 };
 
+/**
+ * POST /api/cases/:id/photo
+ * Faz upload da foto ilustrativa do Case, atualiza caseImageUrl e caseImagePublicId.
+ */
+export const uploadCasePhoto = async (
+  req: UploadReq,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    if (!req.file) {
+      res.status(400).json({ message: 'Arquivo não enviado.' });
+      return;
+    }
+
+    const caso = await Case.findById(id);
+    if (!caso) {
+      res.status(404).json({ message: 'Case não encontrado.' });
+      return;
+    }
+
+    // apaga imagem antiga se existir
+    if (caso.caseImagePublicId) {
+      await cloudinary.uploader.destroy(caso.caseImagePublicId);
+    }
+
+    // faz upload
+    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'case_photos' },
+        (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+          if (err) return reject(err);
+          resolve(result!);
+        }
+      );
+      streamifier.createReadStream(req.file!.buffer).pipe(stream);
+    });
+
+    caso.caseImageUrl      = uploadResult.secure_url;
+    caso.caseImagePublicId = uploadResult.public_id;
+    await caso.save();
+
+    res.status(200).json({ caseImageUrl: caso.caseImageUrl });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/:id/evidences
+ * Retorna todas as evidências associadas ao caso.
+ */
+export const getCaseEvidences = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.isValidObjectId(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
+      return;
+    }
+
+    const foundCase = await Case.findById(caseId)
+      .populate('evidencias'); // popula o array de evidências
+
+    if (!foundCase) {
+      res.status(404).json({ message: 'Caso não encontrado.' });
+      return;
+    }
+
+    res.status(200).json(foundCase.evidencias);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/cases/:id/victims
+ * Retorna todas as vítimas associadas ao caso.
+ */
+export const getCaseVictims = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.isValidObjectId(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
+      return;
+    }
+
+    const foundCase = await Case.findById(caseId)
+      .populate('vitima'); // popula o array de vítimas
+
+    if (!foundCase) {
+      res.status(404).json({ message: 'Caso não encontrado.' });
+      return;
+    }
+
+    res.status(200).json(foundCase.vitima);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+/* Logica para o assistente conseguir visualizar os casos que o perito está vinculado  */
+export const getCasesByUserRole = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id, role } = req.user!;
+
+    let userIdToUse = id;
+
+    if (role === 'assistente') {
+      const assistente = await UserModel.findById(id);
+      if (!assistente?.peritoAfiliado) {
+        res.status(400).json({ message: 'Assistente sem vínculo com perito.' });
+        return;
+      }
+      userIdToUse = assistente.peritoAfiliado.toString();
+    }
+
+    const casos = await Case.find({ responsavel: userIdToUse })
+      .populate('responsavel', 'nome')
+      .populate('vitima','nic sexo corEtnia causaMorte')
+      .populate('evidencias', 'tipo status condicao categoria origem localizacao');
+
+    res.status(200).json(casos);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 // Exportação como objeto para compatibilidade com a importação padrão
 export default {
   createCase,
@@ -255,4 +445,7 @@ export default {
   patchCase,
   deleteCase,
   geocodeAddress,
+  uploadCasePhoto,
+  getCaseVictims,
+  getCaseEvidences,
 };

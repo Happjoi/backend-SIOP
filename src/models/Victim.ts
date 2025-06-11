@@ -20,6 +20,7 @@ export interface IVictim extends Document {
   corEtnia?: string;
   documento?: string;              // RG, CPF, Passaporte etc.
   dataNascimento?: Date;
+  causaMorte: string;
   endereco?: string;
   bodyLesions: IBodyLesion[];
   odontogram: IToothStatus[];
@@ -52,6 +53,7 @@ const victimSchema = new Schema<IVictim>({
   documento:    { type: String },
   dataNascimento:   { type: Date },
   endereco: { type: String },
+  causaMorte: { type: String },
   bodyLesions: {
       type: [BodyLesionSchema],
       default: Array.from({ length: 61 }, (_, i) => ({

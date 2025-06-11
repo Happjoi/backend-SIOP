@@ -6,8 +6,8 @@ export interface IUser extends Document {
   email: string;
   senha: string;
   role: 'perito' | 'admin' | 'assistente';
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+  profileImageUrl?: string;
+  profileImagePublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,10 +17,11 @@ const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
   role: { type: String, enum: ['perito','admin','assistente'], required: true },
+  peritoAfiliado: { type: Schema.Types.ObjectId, ref: 'User' }, // opcional, só para assistentes
 
   // Campos para reset de senha:
-  resetPasswordToken:    { type: String },
-  resetPasswordExpires:  { type: Date }
+  profileImageUrl:      { type: String },
+  profileImagePublicId: { type: String },
 }, {
   timestamps: true  // cria createdAt e updatedAt automaticamente
 });

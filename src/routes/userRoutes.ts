@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import upload from '../middlewares/upload';
 import * as userController from "../controllers/userControllers";
 
 // Tipagem explícita para o roteador
@@ -21,5 +22,8 @@ router.patch("/:id", userController.patchUser);
 
 // Deletar um usuário (Admin apenas)
 router.delete("/:id", userController.deleteUser);
+
+// Rota para upload de foto de perfil:
+router.post('/:id/perfilphoto',upload.single('file'),userController.uploadUserPhoto);
 
 export default router;

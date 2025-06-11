@@ -1,13 +1,28 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from 'express';
+import mongoose, { Types } from 'mongoose';
 import bcrypt from "bcrypt";
 import User, { IUser } from "../models/User";
+import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import streamifier from 'streamifier';
+import 'dotenv/config';
+
+cloudinary.config({
+  cloud_name:   process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key:      process.env.CLOUDINARY_API_KEY!,
+  api_secret:   process.env.CLOUDINARY_API_SECRET!,
+});
+
+interface UploadReq extends Request {
+  file?: Express.Multer.File;
+}
+
 
 // Interface para os dados esperados no corpo da requisição de criação de usuário
 interface CreateUserBody {
   nome: string;
   email: string;
   senha: string;
-  role: string;
+  role: string; 
 }
 
 // Interface para os dados esperados no corpo da requisição de atualização parcial
@@ -143,7 +158,59 @@ export const deleteUser = async (
       .status(500)
       .json({ message: "Erro ao deletar usuário", error: error.message });
   }
+}
+
+  /**
+ * POST /api/users/:id/photo
+ * Faz upload da foto de perfil do User, atualiza os campos profileImageUrl e profileImagePublicId.
+ */
+export const uploadUserPhoto = async (
+  req: UploadReq,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    if (!req.file) {
+      res.status(400).json({ message: 'Arquivo não enviado.' });
+      return;
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(404).json({ message: 'Usuário não encontrado.' });
+      return;
+    }
+
+    // se já houver foto antiga, apaga do Cloudinary
+    if (user.profileImagePublicId) {
+      await cloudinary.uploader.destroy(user.profileImagePublicId);
+    }
+
+    // faz upload
+    const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'user_profiles' },
+        (err: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+          if (err) return reject(err);
+          resolve(result!);
+        }
+      );
+      streamifier.createReadStream(req.file!.buffer).pipe(stream);
+    });
+
+    // salva URLs no usuário
+    user.profileImageUrl      = uploadResult.secure_url;
+    user.profileImagePublicId = uploadResult.public_id;
+    await user.save();
+
+    res.status(200).json({ profileImageUrl: user.profileImageUrl });
+  } catch (err) {
+    next(err);
+  }
+
 };
+
 
 // Exportação como objeto para compatibilidade com a importação padrão
 export default {
@@ -153,4 +220,5 @@ export default {
   updateUser,
   patchUser,
   deleteUser,
+  uploadUserPhoto,
 };

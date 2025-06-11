@@ -12,7 +12,9 @@ import reportRoutes from "./routes/reportRoutes";
 import caseRoutes from "./routes/caseRoutes";
 import victimRoutes from "./routes/victimRoutes";
 import router from "./routes/authRoutes";   
-import dashboard from './routes/dashboardRoutes'
+import dashboard from './routes/dashBoardRoutes'
+import aiRoutes from './routes/aiRoutes';
+import comparisonRoutes from './routes/comparisonRoutes'
 // import imageEvidenceRoutes from './src/routes/imageEvidenceRoutes';
 
 dotenv.config();
@@ -30,6 +32,9 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/cases", caseRoutes);
 app.use("/api/victims", victimRoutes);
 app.use("/api/dashboard", dashboard);
+app.use("/api/ai", aiRoutes);
+app.use ("/api/comparisons", comparisonRoutes)
+
 // app.use('/api/upload', imageEvidenceRoutes);
 
 app.use(errorHandler);

@@ -5,7 +5,7 @@ import * as reportController from "../controllers/reportControllers";
 const router: Router = express.Router();
 
 // Criar um novo relatório
-router.post("/", reportController.createReport);
+router.post("/cases/:caseId", reportController.createReport);
 
 // Obter todos os relatórios
 router.get("/", reportController.getAllReports);
@@ -21,5 +21,8 @@ router.patch("/:id", reportController.patchReport);
 
 // Deletar um relatório
 router.delete("/:id", reportController.deleteReport);
+
+// Gera e retorna o PDF do relatório
+router.get("/:id/pdf", reportController.generateReportPDF);
 
 export default router;

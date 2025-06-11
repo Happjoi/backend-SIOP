@@ -2,23 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import User, { IUser } from "../models/User";
 import bcrypt from "bcrypt";
+import { generateRandomPassword } from '../utils/generateRandomPassword';
+import { sendEmail } from '../config/mailer';
+import transporter from '../config/mailer'
 import jwt from "jsonwebtoken";
 
 // Interface para os dados esperados no corpo da requisição de login
 interface LoginBody {
   email: string;
   senha: string;
-}
-
-// Interface para os dados esperados no corpo da requisição de esquecimento de senha
-interface ForgotPasswordBody {
-  email: string;
-}
-
-// Interface para os dados esperados no corpo da requisição de redefinição de senha
-interface ResetPasswordBody {
-  token: string;
-  newPassword: string;
 }
 
 // Interface para o payload do JWT
@@ -56,7 +48,7 @@ export const login = async (
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
-    res.status(200).json({ token, role: user.role });
+    res.status(200).json({ token, role: user.role, id: user._id });
   } catch (error: any) {
     res
       .status(500)
@@ -91,59 +83,81 @@ export const verifyToken = (
   });
 };
 
-export const forgotPassword = async (
-  req: Request<{}, {}, ForgotPasswordBody>,
-  res: Response
+/**
+ * POST /api/auth/forgot-password
+ * Recebe { email }, gera uma nova senha aleatória, atualiza o usuário no BD
+ * e envia a nova senha por e-mail.
+ */
+export const forgotPasswordEmail = async (
+  req: Request<{}, {}, { email: string }>,
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-  const { email } = req.body;
   try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ message: 'O campo email é obrigatório.' });
+      return;
+    }
+
+    // 1) Verifica se o usuário existe
     const user: IUser | null = await User.findOne({ email });
     if (!user) {
-      res.status(404).json({ message: "Usuário não encontrado" });
+      // Opcional: por segurança, podemos responder 200 mesmo sem existir,
+      // mas aqui retornamos 404 para ficar claro:
+      res.status(404).json({ message: 'Usuário não encontrado para este email.' });
       return;
     }
 
-    const token = crypto.randomBytes(20).toString("hex");
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = new Date(Date.now() + 3600000); // expira em 1h
-    await user.save();
+    // 2) Gera uma nova senha aleatória
+    const newPasswordPlain = generateRandomPassword(8);
 
-    res.json({ message: "Token gerado com sucesso", resetToken: token });
-  } catch (err: any) {
-    res
-      .status(500)
-      .json({ message: "Erro ao gerar token", error: err.message });
-  }
-};
-
-export const resetPassword = async (
-  req: Request<{}, {}, ResetPasswordBody>,
-  res: Response
-): Promise<void> => {
-  const { token, newPassword } = req.body;
-  try {
-    const user: IUser | null = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
-    if (!user) {
-      res.status(400).json({ message: "Token inválido ou expirado" });
-      return;
-    }
-
+    // 3) Faz hash com bcrypt
     const salt = await bcrypt.genSalt(10);
-    user.senha = await bcrypt.hash(newPassword, salt);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    const hashed = await bcrypt.hash(newPasswordPlain, salt);
+
+    // 4) Atualiza o usuário no Banco com a nova senha (já criptografada)
+    user.senha = hashed;
     await user.save();
 
-    res.json({ message: "Senha redefinida com sucesso." });
+    // 5) Envia e-mail com a nova senha (texto e HTML)
+    const subject = 'Recuperação de senha';
+    const html = `
+      <p>Olá ${user.nome},</p>
+      <p>Você solicitou a recuperação de senha no nosso sistema. 
+      Sua nova senha provisória é:</p>
+      <h3 style="color: #444;">${newPasswordPlain}</h3>
+      <p>Assim que fizer login, recomendamos procurar a administração para alteração, para uma senha mais amigável.</p>
+      <p>Atenciosamente,<br/>Equipe de Suporte</p>
+    `;
+    const text = `
+      Olá ${user.nome},
+
+      Você solicitou a recuperação de senha no nosso sistema.
+      Sua nova senha provisória é:
+
+      ${newPasswordPlain}
+
+      Assim que fizer login, recomendamos procurar a administração para alteração, para uma senha mais amigável.
+
+      Atenciosamente,
+      Equipe de Suporte
+          `;
+
+    await sendEmail(user.email, subject, html, text);
+
+    res.status(200).json({
+      message: 'Se o email estiver cadastrado, uma nova senha provisória foi enviada.'
+    });
   } catch (err: any) {
-    res
-      .status(500)
-      .json({ message: "Erro ao redefinir senha", error: err.message });
+    next(err);
   }
 };
 
-// Exportação como objeto para compatibilidade com a importação padrão
-export default { login, logout, verifyToken, resetPassword, forgotPassword };
+// export padrão ou nomeado, conforme a importação:
+export default {
+  login,
+  logout,
+  verifyToken,
+  forgotPasswordEmail
+};

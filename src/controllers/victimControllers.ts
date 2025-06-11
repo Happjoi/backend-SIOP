@@ -1,28 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import VictimModel, { IVictim } from '../models/Victim'
+import VictimModel, { IVictim } from '../models/Victim';
+import CaseModel from "../models/Case";
 
 /**
  * Cria uma nova vítima
  */
 export const createVictim = async (
-  req: Request<{}, {}, { nic: string; nome?: string; sexo?: string; corEtnia?: string; documento?: string; dataNascimento?: string; endereco?: string }>,
+  req: Request<{ caseId: string }, {}, IVictim>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { nic, nome, sexo, corEtnia, documento, dataNascimento, endereco } = req.body;
-    if (!nic) {
-      res.status(400).json({ message: 'Campo obrigatório ausente: nic' });
+    const { caseId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      res.status(400).json({ message: 'ID de caso inválido.' });
       return;
     }
 
-    const exists = await VictimModel.findOne({ nic });
-    if (exists) {
+    const { nic, nome, sexo, corEtnia, documento, dataNascimento, endereco } = req.body;
+    if (!nic) {
+      res.status(400).json({ message: 'NIC é obrigatório.' });
+      return;
+    }
+
+    // evita duplicar vítima globalmente
+    if (await VictimModel.findOne({ nic })) {
       res.status(409).json({ message: 'Já existe vítima com este NIC.' });
       return;
     }
 
+    // cria e adiciona o campo caso internamente (se necessário)
     const newVictim = await VictimModel.create({
       nic,
       nome,
@@ -30,15 +38,21 @@ export const createVictim = async (
       corEtnia,
       documento,
       dataNascimento: dataNascimento ? new Date(dataNascimento) : undefined,
-      endereco
+      endereco,
+      // se o modelo Victim tiver referência ao caso:
+      caso: caseId
     } as Partial<IVictim>);
+
+    // faz push no array vitima do caso
+    await CaseModel.findByIdAndUpdate(caseId, {
+      $push: { vitima: newVictim._id }
+    });
 
     res.status(201).json(newVictim);
   } catch (err) {
     next(err);
   }
 };
-
 /**
  * Lista todas as vítimas
  */
