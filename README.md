@@ -78,11 +78,12 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
 
 ### Autenticação (`/api/auth`)
 
-| Método | Rota               | Ação                                    |
-| :----- | :----------------- | :-------------------------------------- |
-| `POST` | `/login`           | Gera access & refresh tokens            |
-| `POST` | `/refresh-token`   | Renova access token                     |
-| `POST` | `/forgot-password` | Envia nova senha provisória por e-mail  |
+| Método | Rota               | Ação                                   |
+| :----- | :----------------- | :------------------------------------- |
+| `POST` | `/login`           | Gera access & refresh tokens           |
+| `POST` | `/refresh-token`   | Renova access token                    |
+| `POST` | `/forgot-password` | Envia nova senha provisória por e-mail |
+
 
 ### Usuários (`/api/users`)
 
