@@ -1,5 +1,3 @@
-<div align="center">
-
 # Backend-SIOP (DentForensics)
 
 API em **Node.js + TypeScript** para gerenciamento completo de perícias forenses:
