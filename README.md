@@ -76,38 +76,152 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
 
 ## 🚩 Principais Endpoints
 
-### Autenticação (`/api/auth`)
+### 🔐 Autenticação (`/api/auth`)
 
-| Método | Rota               | Ação                                   |
-| :----- | :----------------- | :------------------------------------- |
-| `POST` | `/login`           | Gera access & refresh tokens           |
-| `POST` | `/refresh-token`   | Renova access token                    |
-| `POST` | `/forgot-password` | Envia nova senha provisória por e-mail |
+| Método | Rota               | Protegido | Ação                                   |
+| :----- | :----------------- | :-------: | :------------------------------------- |
+| `POST` | `/login`           |     ✅     | Gera access & refresh tokens           |
+| `POST` | `/refresh-token`   |     ✅     | Renova access token                    |
+| `POST` | `/forgot-password` |     ✅     | Envia nova senha provisória por e-mail |
 
 
-### Usuários (`/api/users`)
 
-CRUD completo (somente `admin`):
-```bash
-GET     /api/users
-GET     /api/users/:id
-POST    /api/users
-PUT     /api/users/:id
-PATCH   /api/users/:id
-DELETE  /api/users/:id
-```
-Casos (/api/cases)
-```
-POST	/api/cases	perito	Criar caso
-GET	/api/cases/visiveis	perito/assist	Listar casos do usuário ou afiliado
-GET	/api/cases/:id	any logged	Detalhar caso
-PUT	/api/cases/:id	perito	Substituir caso
-PATCH	/api/cases/:id	perito	Atualização parcial
-DELETE	/api/cases/:id	perito	Deletar caso
-POST	/api/cases/:id/photo	perito	Upload de foto de caso
-GET	/api/cases/:id/evidences	any logged	Listar evidências vinculadas
-GET	/api/cases/:id/victims	any logged	Listar vítimas vinculadas
-GET	/api/cases/:id/geo	any logged	Geocoding (Nominatim)
-```
+### 👤 Usuários (`/api/users`)
 
-Vítimas (/api/victims & /api/cases/:caseId/victims)
+| Método   | Rota   | Protegido | Ação                            |
+| :------- | :----- | :-------: | :------------------------------ |
+| `GET`    | `/`    |     ✅     | Lista todos os usuários         |
+| `GET`    | `/:id` |     ✅     | Retorna usuário específico      |
+| `POST`   | `/`    |     ✅     | Cria novo usuário               |
+| `PUT`    | `/:id` |     ✅     | Atualiza usuário por completo   |
+| `PATCH`  | `/:id` |     ✅     | Atualiza parcialmente o usuário |
+| `DELETE` | `/:id` |     ✅     | Deleta usuário                  |
+
+### 📁 Casos (/api/cases)
+
+| Método   | Rota             | Protegido | Ação                                |
+| :------- | :--------------- | :-------: | :---------------------------------- |
+| `POST`   | `/`              |     ✅     | Criar novo caso                     |
+| `GET`    | `/`              |     ✅     | Lista todos os casos                |
+| `GET`    | `/visiveis`      |     ✅     | Lista casos visíveis para o usuário |
+| `GET`    | `/:id`           |     ✅     | Retorna detalhes de um caso         |
+| `PUT`    | `/:id`           |     ✅     | Atualiza totalmente um caso         |
+| `PATCH`  | `/:id`           |     ✅     | Atualiza parcialmente um caso       |
+| `DELETE` | `/:id`           |     ✅     | Remove um caso                      |
+| `POST`   | `/:id/photo`     |     ✅     | Upload de imagem do caso            |
+| `GET`    | `/:id/evidences` |     ✅     | Lista evidências do caso            |
+| `GET`    | `/:id/victims`   |     ✅     | Lista vítimas do caso               |
+| `GET`    | `/:id/geo`       |     ✅     | Faz geocodificação do endereço      |
+
+
+### 🧍 Vítimas (/api/victims & /api/cases/:caseId/victims)
+
+| Método   | Rota                         | Protegido | Ação                          |
+| :------- | :--------------------------- | :-------: | :---------------------------- |
+| `POST`   | `/api/cases/:caseId/victims` |     ✅     | Cadastra vítima em um caso    |
+| `GET`    | `/`                          |     ✅     | Lista todas as vítimas        |
+| `GET`    | `/:id`                       |     ✅     | Retorna vítima específica     |
+| `PUT`    | `/:id`                       |     ✅     | Atualiza totalmente a vítima  |
+| `PATCH`  | `/:id`                       |     ✅     | Atualiza parcialmente         |
+| `PATCH`  | `/:id/lesion`                |     ✅     | Atualiza lesões do corpo      |
+| `PATCH`  | `/:id/tooth`                 |     ✅     | Atualiza dados do odontograma |
+| `DELETE` | `/:id`                       |     ✅     | Remove uma vítima             |
+
+### 🔬 Evidências (/api/evidences + /api/cases/:caseId/evidences)
+
+| Método   | Rota                           | Protegido | Ação                                |
+| :------- | :----------------------------- | :-------: | :---------------------------------- |
+| `POST`   | `/api/cases/:caseId/evidences` |     ✅     | Cria evidência para um caso         |
+| `GET`    | `/`                            |     ✅     | Lista todas as evidências           |
+| `GET`    | `/:id`                         |     ✅     | Retorna evidência específica        |
+| `PUT`    | `/:id`                         |     ✅     | Atualiza completamente              |
+| `PATCH`  | `/:id`                         |     ✅     | Atualiza parcialmente               |
+| `DELETE` | `/:id`                         |     ✅     | Remove evidência                    |
+| `POST`   | `/:id/pdf`                     |     ✅     | Gera PDF da evidência               |
+| `POST`   | `/:id/generate-laudo`          |     ✅     | Gera laudo via LLM para a evidência |
+
+### 📊 Relatórios (/api/reports)
+
+| Método   | Rota                                 | Protegido | Ação                              |
+| :------- | :----------------------------------- | :-------: | :-------------------------------- |
+| `POST`   | `/api/cases/:caseId/generate-report` |     ✅     | Gera relatório para o caso via IA |
+| `GET`    | `/`                                  |     ✅     | Lista todos os relatórios         |
+| `GET`    | `/:id`                               |     ✅     | Retorna relatório específico      |
+| `PUT`    | `/:id`                               |     ✅     | Atualiza relatório                |
+| `PATCH`  | `/:id`                               |     ✅     | Atualiza parcialmente             |
+| `DELETE` | `/:id`                               |     ✅     | Remove relatório                  |
+
+### 🧬 Comparações Odontolegal (/api/comparisons)
+
+| Método   | Rota       | Protegido | Ação                                                     |
+| :------- | :--------- | :-------: | :------------------------------------------------------- |
+| `POST`   | `/victims` |     ✅     | Compara vítimas identificadas e não identificadas via IA |
+| `GET`    | `/`        |     ✅     | Lista todos os resultados de comparação                  |
+| `GET`    | `/:id`     |     ✅     | Detalha comparação específica                            |
+| `PUT`    | `/:id`     |     ✅     | Substitui resultado de comparação                        |
+| `PATCH`  | `/:id`     |     ✅     | Atualiza parcialmente resultado de comparação            |
+| `DELETE` | `/:id`     |     ✅     | Remove resultado de comparação                           |
+
+### 📊 Diagrama de Entidades  
+
+classDiagram {
+    User <|-- Perito
+    User <|-- Assistente
+    User <|-- Admin
+
+    class User {
+      +String nome
+      +String email
+      +String senha (hash)
+      +String role
+      +String? peritoAfiliado
+    }
+
+    class Case {
+      +String titulo
+      +String descricao
+      +String status
+      +String localizacao
+      +Date dataAbertura
+      +ObjectId responsavel
+      +ObjectId[] evidencias
+      +ObjectId[] vitima
+    }
+
+    class Victim {
+      +String nic
+      +String? nome
+      +String? causaMorte
+      +BodyLesion[] bodyLesions
+      +ToothStatus[] odontogram
+    }
+
+    class Evidence {
+      +String tipo
+      +Date dataColeta
+      +ObjectId coletadoPor
+      +String? imagemURL
+      +String? conteudo
+      +ObjectId caso
+    }
+
+    class ComparisonResult {
+      +String resultado
+      +Float precisao
+      +ObjectId analisadoPor
+      +Date dataAnalise
+    }
+
+    class Report {
+      +String titulo
+      +String conteudo
+      +ObjectId peritoResponsavel
+      +Date dataCriacao
+    }
+
+    Case "1" o-- "0..*" Victim
+    Case "1" o-- "0..*" Evidence
+    Case "1" o-- "0..*" Report
+
+    Victim "0..*" --o "0..*" ComparisonResult
+    Evidence "0..*" --o "0..*" ComparisonResult
