@@ -301,6 +301,6 @@ classDiagram
 
     Victim "0..*" --o "0..*" ComparisonResult
     Evidence "0..*" --o "0..*" ComparisonResult
+```
 
-
-    MIT © DentForensics Team
+Feito com a contribuição de Felipe Ricardo e Heytor Pimentell 
