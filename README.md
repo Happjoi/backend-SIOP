@@ -72,6 +72,51 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
     npm start
     ```
 
+## 📂 Estrutura de Pastas
+
+backend-SIOP/
+├── src/
+│ ├── app.ts
+│ ├── server.ts
+│ ├── config/
+│ │ ├── mailer.ts
+│ │ └── cloudinary.ts
+│ ├── controllers/
+│ │ ├── authController.ts
+│ │ ├── caseController.ts
+│ │ ├── evidenceController.ts
+│ │ ├── victimController.ts
+│ │ ├── comparisonResultController.ts
+│ │ ├── aiReportController.ts
+│ │ └── aiLaudoController.ts
+│ ├── models/
+│ │ ├── User.ts
+│ │ ├── Case.ts
+│ │ ├── Evidence.ts
+│ │ ├── Victim.ts
+│ │ ├── ComparisonResult.ts
+│ │ └── Report.ts
+│ ├── routes/
+│ │ ├── authRoutes.ts
+│ │ ├── userRoutes.ts
+│ │ ├── caseRoutes.ts
+│ │ ├── evidenceRoutes.ts
+│ │ ├── victimRoutes.ts
+│ │ ├── comparisonRoutes.ts
+│ │ ├── reportRoutes.ts
+│ │ └── aiRoutes.ts
+│ ├── middlewares/
+│ │ ├── authenticateToken.ts
+│ │ ├── authorization.ts
+│ │ └── upload.ts
+│ └── utils/
+│ ├── formatDatePlugin.ts
+│ ├── generateRandomPassword.ts
+│ └── llmClient.ts
+└── .env
+
+    
+
 ---
 
 ## 🚩 Principais Endpoints
@@ -162,19 +207,25 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
 | `PATCH`  | `/:id`     |     ✅     | Atualiza parcialmente resultado de comparação            |
 | `DELETE` | `/:id`     |     ✅     | Remove resultado de comparação                           |
 
-### 📊 Diagrama de Entidades  
 
-classDiagram {
+---
+
+## 📊 Diagrama de Entidades
+
+```
+classDiagram
+    User <|-- Admin
     User <|-- Perito
     User <|-- Assistente
-    User <|-- Admin
 
     class User {
       +String nome
       +String email
-      +String senha (hash)
+      +String senha
       +String role
       +String? peritoAfiliado
+      +String? profileImageUrl
+      +String? profileImagePublicId
     }
 
     class Case {
@@ -186,11 +237,18 @@ classDiagram {
       +ObjectId responsavel
       +ObjectId[] evidencias
       +ObjectId[] vitima
+      +String? caseImageUrl
+      +String? caseImagePublicId
     }
 
     class Victim {
       +String nic
       +String? nome
+      +String? sexo
+      +String? corEtnia
+      +String? documento
+      +Date? dataNascimento
+      +String? endereco
       +String? causaMorte
       +BodyLesion[] bodyLesions
       +ToothStatus[] odontogram
@@ -201,8 +259,20 @@ classDiagram {
       +Date dataColeta
       +ObjectId coletadoPor
       +String? imagemURL
+      +String? publicId
       +String? conteudo
       +ObjectId caso
+      +String categoria
+      +String origem
+      +String condicao
+      +String localizacao
+      +String? observacoesTecnicas
+      +String? descricaoDetalhada
+      +String? laudoConteudo
+      +Date? laudoGeradoEm
+      +String? pdfUrl
+      +String? pdfPublicId
+      +ObjectId[] relatorios
     }
 
     class ComparisonResult {
@@ -210,6 +280,7 @@ classDiagram {
       +Float precisao
       +ObjectId analisadoPor
       +Date dataAnalise
+      +ObjectId[] evidenciasEnvolvidas
     }
 
     class Report {
@@ -217,6 +288,10 @@ classDiagram {
       +String conteudo
       +ObjectId peritoResponsavel
       +Date dataCriacao
+      +ObjectId[] evidencias
+      +ObjectId casoRelacionado
+      +String? pdfUrl
+      +String? pdfPublicId
     }
 
     Case "1" o-- "0..*" Victim
@@ -225,3 +300,6 @@ classDiagram {
 
     Victim "0..*" --o "0..*" ComparisonResult
     Evidence "0..*" --o "0..*" ComparisonResult
+
+
+    MIT © DentForensics Team
