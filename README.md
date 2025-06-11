@@ -52,7 +52,7 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
     SMTP_PORT=587
     SMTP_USER=<seu_usuario_smtp>
     SMTP_PASS=<sua_senha_smtp>
-    EMAIL_FROM="DentForensics <no-reply@seudominio.com>"
+    EMAIL_FROM="SIOP <no-reply@seudominio.com>"
 
     CLOUDINARY_CLOUD_NAME=<cloud_name>
     CLOUDINARY_API_KEY=<api_key>
