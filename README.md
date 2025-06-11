@@ -74,6 +74,7 @@ API em **Node.js + TypeScript** para gerenciamento completo de perícias forense
 
 ## 📂 Estrutura de Pastas
 
+```
 backend-SIOP/
 ├── src/
 │ ├── app.ts
@@ -114,7 +115,7 @@ backend-SIOP/
 │ ├── generateRandomPassword.ts
 │ └── llmClient.ts
 └── .env
-
+```
     
 
 ---
